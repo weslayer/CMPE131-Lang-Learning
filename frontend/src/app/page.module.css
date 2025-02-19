@@ -32,6 +32,9 @@
   flex-direction: column;
   gap: 32px;
   grid-row-start: 2;
+
+  align-items: stretch;
+  justify-content: stretch;
 }
 
 .main ol {

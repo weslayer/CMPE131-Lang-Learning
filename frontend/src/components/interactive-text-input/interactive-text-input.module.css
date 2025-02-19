@@ -1,0 +1,10 @@
+.input-area {
+    min-height: 6em;
+    min-width: 1000px;
+    background-color: #ffffff11;
+    padding: 24px;
+    border-radius: 8px;
+
+    outline:none;
+
+}
