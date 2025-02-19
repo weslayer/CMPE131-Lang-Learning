@@ -24,15 +24,17 @@ let specklePlugin = new Plugin({
   });
   
 
+  
+
 let purplePlugin = new Plugin({
     props: {
         decorations(state) {
             // console.log(state.doc.textContent)
             const a = [
-                "color: red",
-                "color: green",
-                "color: blue",
-                "color: purple"
+                "background-color: red",
+                "background-color: green",
+                "background-color: blue",
+                "background-color: purple"
             ]
             let x= 0;
             // state.doc.textContent.split(" ").map((s,i) => {
@@ -45,7 +47,7 @@ let purplePlugin = new Plugin({
                 state.doc.textContent.split(" ").map((s,i) => {
                     let y = x;
                     x+=s.length+1;
-                    return Decoration.inline(y, y+s.length+3, {style: a[i % a.length]}, {
+                    return Decoration.inline(y+1, y+s.length+1, {style: a[i % a.length]}, {
                         inclusiveEnd: true
                     })
                 })
