@@ -3,12 +3,19 @@
 import styles from "./interactive-text-input.module.css";
 
 import { EditorState, Plugin, Transaction } from "prosemirror-state";
-import { schema } from "prosemirror-schema-basic";
+// import { schema } from "prosemirror-schema-basic";
 import { ProseMirror, useEditorState } from "@nytimes/react-prosemirror";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Decoration, DecorationSet } from "prosemirror-view";
 import { useEntryStore } from "@/util/entry-store";
-import { Node } from "prosemirror-model";
+import { Node, ResolvedPos, Schema, Slice } from "prosemirror-model";
+import { Transform } from "prosemirror-transform";
+
+interface JPToken {
+    token: string,
+    type: string,
+    base?: string
+};
 
 let specklePlugin = new Plugin({
     state: {
@@ -129,12 +136,85 @@ let purplePlugin = new Plugin({
     }
 })
   
+const schema = new Schema({
+    nodes: {
+        doc: {content: "paragraph+"},
+        paragraph: {content: "text*",
+            toDOM(node) { return ["p", 0] },
+        },
+        text: {inline: true},
+    },
+
+    marks: {
+        token: {
+            attrs: {
+                pos: {
+                    default: "EOS"
+                }
+            },
+            toDOM(mark) {
+                console.log("?fdsafds", mark)
+                return [
+                    "span",
+                    {
+                        class: styles["jp-token"]+" "+styles[`token-${mark.attrs.pos}`]
+                    }
+                ];
+            }
+        }
+    }
+});
+
 export default function InteractiveTextInput() {
     const [mount, setMount] = useState<HTMLElement | null>(null);
     
-    const [state, setState] = useState(() => EditorState.create({ schema, plugins: [ TokenizationPlugin ]  }));
+    const [state, setState] = useState(() => EditorState.create({ schema, plugins: [ ]  }));
+
+    const [ tokenization, setTokenization ] = useState([] as JPToken[]);
 
     const entries = useEntryStore();
+
+    
+
+    
+    
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            // console.log(state.doc.textContent);
+            fetch(`/api/tokenize/jp?q=${encodeURIComponent(state.doc.textContent)}`).then(res => res.json()).then((res : {result: JPToken[]}) => {
+                console.log(res);
+                setTokenization(res.result);
+            });
+        }, 1000);
+        return () => {
+            clearTimeout(timeout);
+        }
+    }, [state.doc.textContent]);
+
+    useEffect(() => {
+        setState((s) => {
+
+            //   console.log(doc, s.doc);
+            let tr = s.tr;
+
+            const text = s.doc.textContent;
+
+            let i = 0;
+            tokenization.forEach((token) => {
+                i = text.indexOf(token.token, i);
+                tr = tr.addMark(1+i, 1+i +token.token.length, schema.mark("token", {
+                    pos: token.type
+                }));
+                i += token.token.length;
+            });
+
+            tr = tr.removeMark(s.doc.content.size, s.doc.content.size);
+
+            console.log(s.apply(tr));
+
+            return s.apply(tr);
+        });
+    }, [tokenization]);
 
     // useEffect(() => {
     //     setState((state) => {
@@ -153,7 +233,7 @@ export default function InteractiveTextInput() {
         
         state={state}
         dispatchTransaction={(tr) => {
-          setState((s) => s.apply(tr));
+            setState((s) => s.apply(tr));
         }}
         >
           <div ref={setMount} className={styles["input-area"]}/>
