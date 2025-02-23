@@ -2,7 +2,7 @@
 
 import styles from "./interactive-text-input.module.css";
 
-import { EditorState, Plugin, Transaction } from "prosemirror-state";
+import { EditorState, Plugin, Transaction, PluginKey } from "prosemirror-state";
 // import { schema } from "prosemirror-schema-basic";
 import { ProseMirror, useEditorState } from "@nytimes/react-prosemirror";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -17,7 +17,13 @@ interface JPToken {
     base?: string
 };
 
-let specklePlugin = new Plugin({
+// Add type for the plugin state
+type SpecklePluginState = DecorationSet;
+
+const specklePluginKey = new PluginKey<SpecklePluginState>('speckle');
+
+const specklePlugin = new Plugin<SpecklePluginState>({
+    key: specklePluginKey,
     state: {
       init(_, {doc}) {
         let speckles = []
@@ -28,9 +34,9 @@ let specklePlugin = new Plugin({
       apply(tr, set) { return set.map(tr.mapping, tr.doc) }
     },
     props: {
-      decorations(state) { return specklePlugin.getState(state) }
+      decorations(state) { return this.getState(state) }
     }
-  });
+});
   
 
 
@@ -43,7 +49,7 @@ function decorateTokens(tr:Transaction, doc : Node) {
     
     console.log(tr);
 
-    const tokens : [{from: number, to: number}] = [];
+    const tokens: Array<{from: number, to: number}> = [];
     // For each node in the document
     doc.descendants((node, pos) => {
         if (!node.isText) return;
