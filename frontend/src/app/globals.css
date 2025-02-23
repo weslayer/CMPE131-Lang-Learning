@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -40,3 +44,5 @@ a {
     color-scheme: dark;
   }
 }
+
+/* Keep any custom global styles you need below */

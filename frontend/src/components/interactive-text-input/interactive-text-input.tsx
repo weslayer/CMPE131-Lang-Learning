@@ -236,7 +236,7 @@ export default function InteractiveTextInput() {
             setState((s) => s.apply(tr));
         }}
         >
-          <div ref={setMount} className={styles["input-area"]}/>
+          <div ref={setMount} className="min-h-[6em] w-[60vw] bg-white/10 p-6 rounded-lg outline-none relative"/>
         </ProseMirror>
       );
 }

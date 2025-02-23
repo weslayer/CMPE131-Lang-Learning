@@ -4,9 +4,9 @@ import InteractiveTextInput from "@/components/interactive-text-input/interactiv
 
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-          <InteractiveTextInput/>
+    <div className="min-h-screen grid grid-rows-[20px_1fr_20px] items-center justify-items-center p-20 gap-16">
+      <main className="flex flex-col gap-8">
+        <InteractiveTextInput/>
       </main>
     </div>
   );
