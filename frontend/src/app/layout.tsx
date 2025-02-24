@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/ui/header";
+import { NextAuthProvider } from "@/components/providers/next-auth-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LangLearn",
-  description: "Learn new texts fast",
+  title: "LangLearn - Learn new texts fast",
+  description: "An interactive platform for learning and practicing new languages through text analysis",
+  applicationName: "LangLearn",
+  authors: [{ name: "LangLearn Team" }],
+  keywords: ["language learning", "text analysis", "education"],
 };
 
 export default function RootLayout({
@@ -24,10 +28,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Header />
-        {children}
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className="min-h-screen flex flex-col bg-background text-foreground antialiased">
+        <NextAuthProvider>
+          <Header />
+          <main className="flex-1">
+            {children}
+          </main>
+        </NextAuthProvider>
       </body>
     </html>
   );
