@@ -146,7 +146,7 @@ const schema = new Schema({
     nodes: {
         doc: {content: "paragraph+"},
         paragraph: {content: "text*",
-            toDOM(node) { return ["p", 0] },
+            toDOM() { return ["p", 0] },
         },
         text: {inline: true},
     },
@@ -156,6 +156,9 @@ const schema = new Schema({
             attrs: {
                 pos: {
                     default: "EOS"
+                },
+                i: {
+                    default: -1
                 }
             },
             toDOM(mark) {
@@ -187,7 +190,7 @@ export default function InteractiveTextInput() {
     useEffect(() => {
         const timeout = setTimeout(() => {
             // console.log(state.doc.textContent);
-            fetch(`/api/tokenize/jp?q=${encodeURIComponent(state.doc.textContent)}`).then(res => res.json()).then((res : {result: JPToken[]}) => {
+            fetch(`/api/tokenize/cn?q=${encodeURIComponent(state.doc.textContent)}`).then(res => res.json()).then((res : {result: JPToken[]}) => {
                 console.log(res);
                 setTokenization(res.result);
             });
@@ -206,10 +209,11 @@ export default function InteractiveTextInput() {
             const text = s.doc.textContent;
 
             let i = 0;
-            tokenization.forEach((token) => {
+            tokenization.forEach((token, j) => {
                 i = text.indexOf(token.token, i);
                 tr = tr.addMark(1+i, 1+i +token.token.length, schema.mark("token", {
-                    pos: token.type
+                    pos: token.type,
+                    i: j
                 }));
                 i += token.token.length;
             });
