@@ -1,0 +1,26 @@
+{
+    "manifest_version": 2,
+    "name": "LangLearn",
+    "version": "1.0",
+  
+    "description": "Easily look up translations.",
+  
+    "icons": {
+      "48": "icons/border-48.png"
+    },
+    
+    "background": {
+        "scripts": ["src/background.js"],
+        "persistent": false,
+        "type": "module"
+    },
+
+  
+    "content_scripts": [
+      {
+        "matches": ["*://*/*"],
+        "js": ["src/main.js"]
+      }
+    ]
+  }
+  
