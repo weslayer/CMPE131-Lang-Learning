@@ -1,0 +1,5 @@
+fastapi==0.95.0
+pydantic==1.10.8
+uvicorn==0.21.1
+redis==4.5.5
+jieba==0.42.1
