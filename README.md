@@ -1,1 +1,3 @@
-# CMPE131-Lang-Learning
+nihao huzz!
+
+### `docker-compose up -d` to run
