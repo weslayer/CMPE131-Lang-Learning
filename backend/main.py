@@ -1,10 +1,9 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 import jieba
-import redis
-import json
 import uvicorn
 import os
+
 
 import CDict
 from contextlib import asynccontextmanager
@@ -50,25 +49,18 @@ async def tokenize_chinese(q: str = Query(..., description="Chinese text to toke
     # remove spaces
     q = q.replace(" ", "")
     
-    # check if in cache
-    # cache_key = f"tokenize:{q}"
-    # cached_result = redis_client.get(cache_key)
     
-    # if cached_result:
-        # return cached result
-        # return json.loads(cached_result)
-    
-    # tokenize text if not in cache
+    # tokenize text
     tokens = list(jieba.cut(q, cut_all=False))
     result = {"tokens": tokens}
     
     # cache result
-    # redis_client.setex(
-    #     cache_key, 
-    #     CACHE_EXPIRATION,
-    #     json.dumps(result, ensure_ascii=False)
-    # )
-    
+    redis_client.setex(
+        cache_key, 
+        CACHE_EXPIRATION,
+        json.dumps(result, ensure_ascii=False)
+    )
+
     return result
 
 
