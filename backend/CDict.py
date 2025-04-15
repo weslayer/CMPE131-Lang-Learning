@@ -5,17 +5,44 @@ import pygtrie
 
 
 
-def vowel_tone_to_unicode(vowel, tone):
 
+
+
+
+def syllable_tone_to_unicode(syllable:str, tone:int):
     diacritic_mappings = [
         "\u0304", "\u0301", "\u030C", "\u0300", "\u0307"
     ]
+    v_index = syllable.find("v")
+    if(v_index != -1):
+        return syllable[:v_index] + "ü" + diacritic_mappings[tone] + syllable[v_index+1:]
 
-    if(vowel == "v"):
-        return "ü" + diacritic_mappings[tone]
+    a_index = syllable.find("a")
+    if(a_index != -1):
+        return syllable[:a_index+1] + diacritic_mappings[tone] + syllable[a_index+1:]
+    e_index = syllable.find("e")
+    if(e_index != -1):
+        return syllable[:e_index+1] + diacritic_mappings[tone] + syllable[e_index+1:]
+    o_index = syllable.find("o")
+    if(o_index != -1):
+        return syllable[:o_index+1] + diacritic_mappings[tone] + syllable[o_index+1:]
+    i_index = syllable.find("i")
+    u_index = syllable.find("u")
+    if(i_index != -1):
+        if(u_index != -1 and i_index < u_index):
+            return syllable[:u_index+1] + diacritic_mappings[tone] + syllable[u_index+1:]
+        else:
+            return syllable[:i_index+1] + diacritic_mappings[tone] + syllable[i_index+1:]
+    elif(u_index != -1):
+        return syllable[:u_index+1] + diacritic_mappings[tone] + syllable[u_index+1:]
+
+    return syllable
 
 
-
+def reading_to_syllable(syllable: str):
+    if("0" <= syllable[-1] and syllable[-1] <= "9"):
+        return syllable_tone_to_unicode(syllable[:-1], int(syllable[-1])-1)
+    return syllable
 
 class CDictEntry:
 
@@ -23,7 +50,8 @@ class CDictEntry:
         self.id = id
         self.trad = trad
         self.simp = simp
-        self.reading = reading
+        # print(reading)
+        self.reading = [ reading_to_syllable(syllable) for syllable in reading.lower().split(" ")]
         self.senses = senses
 
 
@@ -127,10 +155,25 @@ class CDict:
 
 
 
-    def search(self, term : str):
+    def search(self, term : str) -> list[CDictEntry]:
         if(term in self.index):
             return [self.entries[e] for e in self.index[term]]
             # print(self.entries[kanji])
         else:
             return None
             # print(kanji+" unknown")
+
+
+if __name__ == "__main__":
+    d = CDict("./data/cedict_ts.txt")
+    print(d.search("超級市場")[0].reading)
+    # print(syllable_tone_to_unicode("gui", 1))
+    # print(syllable_tone_to_unicode("lan", 2))
+    # print(syllable_tone_to_unicode("yuan", 0))
+    # print(syllable_tone_to_unicode("nan", 3))
+    # print(syllable_tone_to_unicode("ke", 2))
+    # print(syllable_tone_to_unicode("yu", 0))
+    # print(syllable_tone_to_unicode("ng", 3))
+    # print(syllable_tone_to_unicode("lv", 3))
+    # print(syllable_tone_to_unicode("lang", 2))
+    # print(syllable_tone_to_unicode("lou", 1))
