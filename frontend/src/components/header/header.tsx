@@ -5,6 +5,8 @@ import { signIn, signOut, useSession } from "next-auth/react"
 import Image from "next/image"
 import Link from "next/link"
 
+import styles from "./header.module.css";
+
 export function Header() {
   const { data: session, status } = useSession()
 
@@ -24,17 +26,18 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/60 backdrop-blur-sm supports-[backdrop-filter]:bg-background/40">
-      <div className="container flex h-16 items-center justify-between">
-        <Link 
-          href="/" 
-          className="text-lg font-bold tracking-tight hover:text-primary transition-colors"
-          tabIndex={0}
-          aria-label="Go to homepage"
-        >
-          LangLearn
-        </Link>
-        <nav className="flex items-center gap-4" aria-label="Main navigation">
+    <header className={styles["header"]}>
+        <nav className={styles["nav"]} aria-label="Main navigation">
+
+          <Link 
+            href="/" 
+            className="text-lg font-bold tracking-tight hover:text-primary transition-colors"
+            tabIndex={0}
+            aria-label="Go to homepage"
+          >
+            LangLearn
+          </Link>
+
           {status === "loading" ? (
             <div 
               className="h-8 w-8 animate-pulse rounded-full bg-gray-200" 
@@ -82,7 +85,6 @@ export function Header() {
             </div>
           )}
         </nav>
-      </div>
     </header>
   )
 } 
