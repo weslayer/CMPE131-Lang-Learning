@@ -1,4 +1,4 @@
-
+import styles from "./ruby-display.module.css"
 
 interface RubyTerm {
     text: string,
@@ -11,11 +11,9 @@ export function RubyDisplay({
 
     return <>
         {terms.map((term, i) => {
-            return <ruby key={i}>
+            return <ruby key={i} className={styles["ruby"]}>
                 {term.text}
-                {( i == 0 ? <rp>(</rp> : <></>)}
                 <rt>{term.reading}</rt>
-                {( i == terms.length-1 ? <rp>)</rp> : <></>)}
             </ruby>
         })}
     </>

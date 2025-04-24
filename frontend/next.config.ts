@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
-
-const DICTIONARY_SERVER = "http://127.0.0.1:8000";
+import { DICTIONARY_SERVER } from "./config";
 
 const nextConfig: NextConfig = {
   async rewrites() {
@@ -16,6 +15,10 @@ const nextConfig: NextConfig = {
       {
         source: '/api/term/jp/:term',
         destination: `${DICTIONARY_SERVER}/term/jp/:term`,
+      },
+      {
+        source: '/api/term/cn/:term',
+        destination: `${DICTIONARY_SERVER}/term/cn/:term`,
       },
       {
         source: '/api/kanji/jp/:term',

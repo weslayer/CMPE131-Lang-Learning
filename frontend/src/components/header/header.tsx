@@ -8,14 +8,14 @@ import Link from "next/link"
 import styles from "./header.module.css";
 
 export function Header() {
-  const { data: session, status } = useSession()
+  // const { data: session, status } = useSession()
 
   const handleSignIn = async () => {
-    await signIn("google", { callbackUrl: "/" })
+    // await signIn("google", { callbackUrl: "/" })
   }
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/" })
+    // await signOut({ callbackUrl: "/" })
   }
 
   const handleKeyDown = (handler: () => void) => (e: React.KeyboardEvent) => {
@@ -38,7 +38,7 @@ export function Header() {
             LangLearn
           </Link>
 
-          {status === "loading" ? (
+          {/* {status === "loading" ? (
             <div 
               className="h-8 w-8 animate-pulse rounded-full bg-gray-200" 
               role="status"
@@ -83,7 +83,7 @@ export function Header() {
                 Sign in with Google
               </Button>
             </div>
-          )}
+          )} */}
         </nav>
     </header>
   )

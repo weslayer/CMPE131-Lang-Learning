@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Chocolate_Classical_Sans } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/header/header";
 import { NextAuthProvider } from "@/components/providers/next-auth-provider";
@@ -17,6 +17,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const chocolateClassicalSans = Chocolate_Classical_Sans({
+  weight: "400",
+  variable: "--font-chocolate"
+});
+
 export const metadata: Metadata = {
   title: "LangLearn - Learn new texts fast",
   description: "An interactive platform for learning and practicing new languages through text analysis",
@@ -31,14 +36,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${chocolateClassicalSans.variable}`}>
       <body className={styles["body"]}>
-        <NextAuthProvider>
+        {/* <NextAuthProvider> */}
           <Header />
-          <main>
+          <main className={styles["main"]}>
             {children}
           </main>
-        </NextAuthProvider>
+        {/* </NextAuthProvider> */}
       </body>
     </html>
   );
