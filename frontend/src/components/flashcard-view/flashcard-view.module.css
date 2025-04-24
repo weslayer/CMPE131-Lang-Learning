@@ -1,0 +1,28 @@
+
+
+
+.flashcard {
+    font-size: 36px;
+    margin: 24px;
+
+    border-radius: 8px;
+    
+    border: #ffffff61 solid 1px;
+
+    /* display: flex; */
+    align-items: center;
+    justify-content: center;
+
+    /* display: hidden; */
+    display: none;
+
+    user-select: none;
+
+    width: 500px;
+    height: 300px;
+}
+
+.shown {
+    /* visibility: visible; */
+    display: flex;
+}

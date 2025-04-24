@@ -124,19 +124,21 @@ class CDict:
         out = []
         while(i < n):
             token = self.search_trie.longest_prefix(text[i:], ).key
-            print(token, text[i: ])
+            # print(token, text[i: ])
             if(token is None):
-                out.append({
-                    "token": text[i],
-                    "type": "noun"
-                })
+                out.append(token)
+                # out.append({
+                #     "token": text[i],
+                #     "type": "noun"
+                # })
                 i += 1
                 continue
-            out.append({
-                "token": token,
-                "type": "noun",
-                "index": i
-            })
+            # out.append({
+            #     "token": token,
+            #     "type": "noun",
+            #     "index": i
+            # })
+            out.append(token)
             i += len(token)
         return out
         

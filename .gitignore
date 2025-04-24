@@ -1,4 +1,8 @@
 .next
 node_modules
+data
+
 __pycache__
 data
+
+secret.ts

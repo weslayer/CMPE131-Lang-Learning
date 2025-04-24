@@ -1,0 +1,55 @@
+.input-area {
+    min-height: 6em;
+    width: 60vw;
+    background-color: #ffffff11;
+    padding: 24px;
+    border-radius: 8px;
+
+    outline:none;
+
+    position: relative;
+
+}
+
+.input-area p {
+    max-width: 100%;
+    text-wrap: stable;
+    word-break: break-all;
+}
+
+
+
+.token-adverb {
+    border-bottom: #ff6262 2px solid;
+}
+
+.token-noun {
+    border-bottom: #ffd062 2px solid;
+}
+
+.token-verb {
+    border-bottom: #72ff62 2px solid;
+}
+
+.token-pronoun {
+    border-bottom: #62b3ff 2px solid;
+}
+
+.token-auxillary-verb {
+    border-bottom: #6a62ff 2px solid;
+}
+
+.token-particle {
+    border-bottom: #ff62e0 2px solid;
+}
+
+.token-adjective {
+    border-bottom: #ffae62 2px solid;
+}
+
+.jp-token {
+  background: none;
+}
+.jp-token:hover{ 
+  background: #64fffa39;
+}
