@@ -1,3 +1,54 @@
+# Language Learning Frontend
+
+## Environment Setup
+
+This project uses environment variables for configuration. To set up your environment:
+
+1. Create a `.env` file in the root of the frontend directory with the following variables:
+
+```
+# MongoDB credentials
+DB_USERNAME=your_actual_username
+DB_PASSWORD=your_actual_password
+
+# Dictionary server URL
+DICTIONARY_SERVER=http://127.0.0.1:8000
+```
+
+2. Replace the placeholder values with your actual credentials.
+
+3. Make sure the `.env` file is listed in `.gitignore` to prevent committing sensitive information.
+
+## Development
+
+To run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+## Building for Production
+
+To build the application for production:
+
+```bash
+npm run build
+# or
+yarn build
+```
+
+## Running Tests
+
+To run tests:
+
+```bash
+npm test
+# or
+yarn test
+```
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
