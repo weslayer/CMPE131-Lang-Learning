@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
     # with open("./data/cedict_ts.txt", "rb") as f:
         # jp_dict = pickle.load(f)
     c_dict = CDict.CDict("./data/cedict_ts.txt")
-    jieba.set_dictionary('data/dict.txt.big')
+    jieba.set_dictionary('data/dict.txt.reduced')
     yield
     # Deload
     # jp_dict = None
@@ -28,11 +28,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-REDIS_HOST = os.getenv("REDIS_HOST", "redis")
-REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+# REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+# REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 
-redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
-CACHE_EXPIRATION = 3600 # 1 hour n shyt
+# redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
+# CACHE_EXPIRATION = 3600 # 1 hour n shyt
 
 app.add_middleware(
     CORSMiddleware,
@@ -57,7 +57,8 @@ async def tokenize_chinese(q: str = Query(..., description="Chinese text to toke
         # return json.loads(cached_result)
     
     # tokenize text if not in cache
-    tokens = list(jieba.cut(q, cut_all=False))
+    tokens = list(jieba.cut(q, cut_all=True))
+    # tokens = c_dict.tokenize(q)
     result = {"tokens": tokens}
     
     # cache result
