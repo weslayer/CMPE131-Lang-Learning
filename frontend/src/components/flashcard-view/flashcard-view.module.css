@@ -1,28 +1,31 @@
-
-
-
 .flashcard {
-    font-size: 36px;
-    margin: 24px;
-
-    border-radius: 8px;
+    font-size: 2rem;
+    margin: 1.5rem auto;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     
-    border: #ffffff61 solid 1px;
-
-    /* display: flex; */
+    display: none;
     align-items: center;
     justify-content: center;
-
-    /* display: hidden; */
-    display: none;
-
+    text-align: center;
+    
+    transition: all 0.3s ease;
     user-select: none;
-
+    
     width: 500px;
-    height: 300px;
+    min-height: 300px;
 }
 
 .shown {
-    /* visibility: visible; */
     display: flex;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }

@@ -16,26 +16,28 @@ function useSide() {
 }
 
 export function Flashcard({ side, onClick, children }:  { side: boolean, onClick?: () => void, children: ReactNode}) {
-    // const ctx = useContext(FlashcardContext);
-    
-    return <button onClick={onClick}>
-        <SideContext.Provider value={{side}}>
-
-            {children}
-        </SideContext.Provider>
-    </button>
+    return (
+        <div 
+            className="relative w-full max-w-xl mx-auto cursor-pointer"
+            onClick={onClick}
+        >
+            <SideContext.Provider value={{side}}>
+                {children}
+            </SideContext.Provider>
+        </div>
+    );
 }
 
 export function FlashcardFront({ children }:  { children: ReactNode}) {
     const side = useSide();
-    return <div className={styles["flashcard"] + (!side ? " " + styles["shown"] : "")}>
+    return <div className={`${styles.flashcard} ${!side ? styles.shown : ''}`}>
         { children }
     </div>
 }
 
 export function FlashcardBack({ children }:  { children: ReactNode}) {
     const side = useSide();
-    return <div className={styles["flashcard"] + (side ? " " + styles["shown"] : "")}>
+    return <div className={`${styles.flashcard} ${side ? styles.shown : ''}`}>
         { children }
     </div>
 }

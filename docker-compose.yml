@@ -1,13 +1,43 @@
 services:
   backend:
-    build: ./backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    environment:
+      - MONGODB_URL=mongodb+srv://${DB_USERNAME}:${DB_PASSWORD}@langlearning-cluster.lg4o4fr.mongodb.net/?retryWrites=true&w=majority&appName=langlearning-cluster
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_CLUSTER=${DB_CLUSTER}
+      - DB_NAME=${DB_NAME}
+    volumes:
+      - backend_data:/app/data
     restart: always
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    environment:
+      - DICTIONARY_SERVER=http://backend:8000
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
     restart: always
+
+volumes:
+  backend_data:
+    driver: local
 

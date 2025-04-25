@@ -38,12 +38,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${chocolateClassicalSans.variable}`}>
       <body className={styles["body"]}>
-        {/* <NextAuthProvider> */}
+        <NextAuthProvider>
           <Header />
           <main className={styles["main"]}>
             {children}
           </main>
-        {/* </NextAuthProvider> */}
+        </NextAuthProvider>
       </body>
     </html>
   );

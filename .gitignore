@@ -7,3 +7,6 @@ data
 
 secret.ts
 .env
+.env.local
+
+venv

@@ -2,6 +2,15 @@ import type { NextConfig } from "next";
 import { DICTIONARY_SERVER } from "./config";
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/**',
+      },
+    ],
+  },
   async rewrites() {
     return [
       {
@@ -27,7 +36,18 @@ const nextConfig: NextConfig = {
       {
         source: '/api/image/ocr',
         destination: `${DICTIONARY_SERVER}/image/ocr`,
-
+      },
+      {
+        source: '/api/user/decks',
+        destination: `${DICTIONARY_SERVER}/user/decks`,
+      },
+      {
+        source: '/api/user/default-deck',
+        destination: `${DICTIONARY_SERVER}/user/default-deck`,
+      },
+      {
+        source: '/api/decks/:deck/flashcards',
+        destination: `${DICTIONARY_SERVER}/decks/:deck/flashcards`,
       }
     ]
   },

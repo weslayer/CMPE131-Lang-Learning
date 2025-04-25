@@ -13,12 +13,14 @@
     "@nytimes/react-prosemirror": "^1.0.3",
     "@radix-ui/react-slot": "^1.0.2",
     "@react-icons/all-files": "^4.1.0",
+    "@types/jsonwebtoken": "^9.0.9",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "frontend": "file:",
+    "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.16.0",
-    "next": "15.1.7",
-    "next-auth": "^5.0.0-beta.25",
+    "next": "15.2.4",
+    "next-auth": "^5.0.0-beta.13",
     "prosemirror-schema-basic": "^1.2.3",
     "prosemirror-transform": "^1.10.2",
     "prosemirror-view": "^1.38.0",
@@ -29,15 +31,21 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
     "autoprefixer": "^10.4.0",
-    "eslint": "^9",
-    "eslint-config-next": "15.1.7",
+    "eslint-config-next": "15.2.4",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
     "typescript": "^5"
+  },
+  "resolutions": {
+    "glob": "^10.0.0",
+    "rimraf": "^5.0.0",
+    "@eslint/eslintrc": "^3.0.0",
+    "@jridgewell/gen-mapping": "^0.3.8"
   }
 }

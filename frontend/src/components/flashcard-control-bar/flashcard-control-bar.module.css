@@ -1,33 +1,37 @@
-
-
-
 .timeline-control {
     display: flex;
-    flex-direction: row;
+    justify-content: center;
     align-items: center;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+    font-size: 1rem;
 }
 
 .timeline-button {
-    margin: 16px;
-    padding: 4px;
-
-    border: #ffffff61 solid 1px;
-    border-radius: 100%;
-
-    transition: background-color .3s, opacity .1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.timeline-button:hover {
-
-    background-color: #ffffff1d;
-}
-
-.timeline-bold {
-    font-weight: bolder;
+.timeline-button:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
 }
 
 .timeline-button:disabled {
-    background-color: none;
-    opacity: 10%;
-    
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.timeline-bold {
+    color: rgba(255, 255, 255, 0.5);
 }

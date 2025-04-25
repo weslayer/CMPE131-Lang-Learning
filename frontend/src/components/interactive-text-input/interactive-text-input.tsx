@@ -5,7 +5,7 @@ import styles from "./interactive-text-input.module.css";
 
 
 import { EditorState, Plugin, Transaction, PluginKey } from "prosemirror-state";
-// import { schema } from "prosemirror-schema-basic";
+import { schema } from "prosemirror-schema-basic";
 import { ProseMirror, useEditorState } from "@nytimes/react-prosemirror";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Decoration, DecorationSet } from "prosemirror-view";

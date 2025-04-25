@@ -1,34 +1,37 @@
-
-
-.flashcard {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-around;
-
-    position: relative;
-
-    padding: 24px;
-
-    font-size: 18px;
-
-    border: #ffffff61 solid 1px;
-    border-radius: 16px;
-    margin: 20px;
-    width: 50vw;
-
+.flashcard-list {
+  margin-top: 2rem;
+  width: 100%;
 }
 
-.vertical {
-    width: 1px;
-    height: 100%;
-    border-left: #ffffff solid 1px;
+.flashcard {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .flashcard-term {
-    font-size: 24px;
-    /* font-weight: bold; */
-    padding: 24px;
+  flex: 0 0 auto;
+  padding-right: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.flashcard-definition {
+  flex: 1;
+  padding-left: 1.5rem;
+  color: #374151;
+}
+
+.vertical {
+  width: 1px;
+  background-color: #e5e7eb;
+  align-self: stretch;
+  margin: 0 0.5rem;
 }
 
 .flashcard-reading {
