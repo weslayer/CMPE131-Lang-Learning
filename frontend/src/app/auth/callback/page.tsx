@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -12,16 +12,14 @@ export default function AuthCallback() {
   useEffect(() => {
     async function handleCallback() {
       if (!token) {
-        console.error('No token received from backend');
-        router.push('/auth/error?error=no_token');
+        // We don't receive tokens directly in our simplified flow
+        // Just redirect to home page, cookies should have been set
+        router.push('/');
         return;
       }
 
       try {
-        // Store the token securely
-        localStorage.setItem('auth_token', token);
-        
-        // Use next-auth to set the session
+        // If we do have a token, use it with credentials provider
         const result = await signIn('credentials', {
           token,
           redirect: false,

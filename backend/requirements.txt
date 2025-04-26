@@ -1,8 +1,8 @@
 fastapi==0.104.1
 pydantic>=2.4.2
 pydantic[email]>=2.4.2
-uvicorn==0.21.1
-redis==4.5.5
+uvicorn==0.23.2
+httpx==0.25.0
 jieba==0.42.1
 pygtrie==2.5.0
 python-jose[cryptography]==3.3.0

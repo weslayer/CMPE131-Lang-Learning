@@ -1,3 +1,4 @@
+import { Flashcard } from "@/types/flashcard";
 import { getAuthHeaders } from "./auth";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
@@ -40,14 +41,14 @@ export async function fetchAPI(
 /**
  * Get user's flashcards
  */
-export async function getFlashcards() {
+export async function getFlashcards(): Promise<Flashcard[]> {
   return fetchAPI('/api/my-flashcards')
 }
 
 /**
  * Create a new flashcard
  */
-export async function createFlashcard(flashcardData: any) {
+export async function createFlashcard(flashcardData: Partial<Flashcard>): Promise<Flashcard> {
   return fetchAPI('/api/my-flashcards', {
     method: 'POST',
     body: JSON.stringify(flashcardData),
@@ -57,7 +58,7 @@ export async function createFlashcard(flashcardData: any) {
 /**
  * Delete a flashcard
  */
-export async function deleteFlashcard(flashcardId: string) {
+export async function deleteFlashcard(flashcardId: string): Promise<void> {
   return fetchAPI(`/flashcards/${flashcardId}`, {
     method: 'DELETE',
   })

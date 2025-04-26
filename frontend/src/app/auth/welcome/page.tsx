@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -12,28 +12,15 @@ export default function WelcomePage() {
   // Get parameters from URL
   const name = searchParams.get('name');
   const email = searchParams.get('email');
-  const csrfToken = searchParams.get('csrf_token');
   
   useEffect(() => {
-    // Save CSRF token if provided
-    if (csrfToken) {
-      // Save CSRF token to a cookie that JavaScript can read
-      document.cookie = `csrf_token=${csrfToken}; path=/; max-age=604800; SameSite=Lax; Secure`;
-      
-      // Remove the CSRF token from the URL to prevent leaking it in browser history
-      // We do this by creating a new URL without the csrf_token parameter
-      const url = new URL(window.location.href);
-      url.searchParams.delete('csrf_token');
-      window.history.replaceState({}, '', url.toString());
-    }
-    
     // Redirect to dashboard after 2 seconds
     const timer = setTimeout(() => {
       router.push('/my-flashcards');
     }, 2000);
     
     return () => clearTimeout(timer);
-  }, [csrfToken, router]);
+  }, [router]);
   
   if (status !== 'authenticated') {
     return (

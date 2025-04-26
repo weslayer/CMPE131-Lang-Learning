@@ -3,12 +3,6 @@ import time
 
 import pygtrie
 
-
-
-
-
-
-
 def syllable_tone_to_unicode(syllable:str, tone:int):
     diacritic_mappings = [
         "\u0304", "\u0301", "\u030C", "\u0300", "\u0307"
@@ -53,9 +47,6 @@ class CDictEntry:
         # print(reading)
         self.reading = [ reading_to_syllable(syllable) for syllable in reading.lower().split(" ")]
         self.senses = senses
-
-
-
 
 class CDict:
     def __init__(self, filepath):

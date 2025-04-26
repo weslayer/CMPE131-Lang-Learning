@@ -1,128 +1,112 @@
-import NextAuth from "next-auth"
-import type { NextAuthConfig } from "next-auth"
-import type { JWT } from "next-auth/jwt"
-import type { Session } from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
-import CredentialsProvider from "next-auth/providers/credentials"
+import { DICTIONARY_SERVER } from "@/config";
+import type { NextAuthConfig } from "next-auth";
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
 
-// Simple token verification function that works in Edge runtime
-function verifyToken(token: string, secret: string) {
-  try {
-    // Simple base64 decode to get the payload
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload;
-  } catch (e) {
-    console.error("Failed to verify token:", e);
-    return null;
-  }
-}
-
-const authOptions: NextAuthConfig = {
+// Ultra-simple NextAuth configuration
+const authConfig: NextAuthConfig = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      // Allow automatic account linking by email
       allowDangerousEmailAccountLinking: true,
     }),
-    CredentialsProvider({
-      name: "Custom Token",
-      credentials: {
-        token: { label: "Token", type: "text" }
-      },
-      async authorize(credentials) {
-        try {
-          if (!credentials?.token) return null;
-          
-          // Simple token verification that works in Edge runtime
-          const decoded = verifyToken(
-            credentials.token as string, 
-            (process.env.JWT_SECRET_KEY || "fallback-secret-for-development-only") as string
-          );
-          
-          if (!decoded || typeof decoded !== 'object') return null;
-          
-          // Return user data in the format NextAuth expects
-          return {
-            id: decoded.sub,
-            email: decoded.email,
-            name: decoded.name,
-            image: decoded.picture
-          };
-        } catch (error) {
-          console.error("Error validating token", error);
-          return null;
-        }
-      }
-    })
   ],
-  secret: process.env.NEXTAUTH_SECRET || process.env.JWT_SECRET_KEY,
-  session: {
-    strategy: "jwt" as const,
+  // Add this to make session work properly
+  session: { 
+    strategy: "jwt",
+    maxAge: 7 * 24 * 60 * 60, // 7 days
   },
   callbacks: {
-    async jwt({ token, account, user }) {
-      // Initial sign in
-      if (account?.access_token) {
-        token.accessToken = account.access_token;
+    async jwt({ token, user, account }) {
+      console.log("JWT callback triggered", { user, account });
+      
+      // If neither user nor account is defined, this is likely a session refresh
+      // Just return the existing token without modification
+      if (!user && !account) {
+        console.log("Session refresh detected, returning existing token");
+        return token;
       }
-      // When using credentials provider, copy user data to token
+      
+      // When signing in, copy the user data to the token
       if (user) {
-        token.email = user.email;
+        console.log("User data available in jwt callback:", user);
+        token.sub = user.id; // Set sub claim for proper JWT handling
         token.name = user.name;
+        token.email = user.email;
         token.picture = user.image;
       }
-      // If we have a Google account, we'll add some additional fields
-      if (account && user) {
-        if (account.provider === "google") {
-          // Send user data to our backend to create/update the user
-          try {
-            const userId = `google-${user.id}`
-            const response = await fetch(`${process.env.BACKEND_URL}/auth/google/register`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                id: userId,
-                email: user.email,
-                name: user.name,
-                picture: user.image,
-              }),
-            })
-            
-            if (response.ok) {
-              // Store the backend user ID in the token
-              token.backendUserId = userId
-            }
-          } catch (error) {
-            console.error("Error registering user with backend:", error)
+      
+      // Store Google user ID with proper format in token
+      if (account?.provider === "google" && user?.id) {
+        const googleId = `google-${user.id}`;
+        console.log(`Setting Google ID in token: ${googleId}`);
+        token.id = googleId;
+        
+        // Register user with backend
+        try {
+          console.log(`Registering user in backend: ${googleId}`);
+          
+          const response = await fetch(`${DICTIONARY_SERVER}/auth/google/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: googleId,
+              email: user.email || "",
+              name: user.name || "User",
+              picture: user.image || "",
+            }),
+            cache: 'no-store',
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Backend registration failed (${response.status}): ${errorText}`);
+          } else {
+            const result = await response.json();
+            console.log(`User registered successfully: ${result.user_id}`);
           }
+        } catch (error) {
+          console.error("User registration error:", error);
         }
       }
+      
+      console.log("Final token contents:", token);
       return token;
     },
     async session({ session, token }) {
+      console.log("Session callback triggered", { token });
+      
+      // When preparing session for the client, copy token data back to session
       if (session.user) {
-        session.user.id = token.sub ?? "";
-        // Add any additional user data you want in the session
-        if (token.email) session.user.email = token.email as string;
-        if (token.name) session.user.name = token.name as string;
-        if (token.picture) session.user.image = token.picture as string;
+        // Set user ID from token (prioritize Google ID format if available)
+        session.user.id = (token.id as string) || (token.sub as string) || "";
+        
+        // Ensure we use the properly formatted Google ID if available
+        if (!session.user.id.startsWith('google-') && token.sub) {
+          session.user.id = `google-${token.sub}`;
+        }
+        
+        // Copy other user data
+        session.user.email = token.email as string || session.user.email;
+        session.user.name = token.name as string || session.user.name;
+        session.user.image = token.picture as string || session.user.image;
+        
+        console.log(`Session created with user ID: ${session.user.id}`);
       }
-      // Send properties to the client
-      if (token.backendUserId) {
-        session.user.id = token.backendUserId as string
-      }
+      
       return session;
     },
   },
   pages: {
     signIn: '/auth/signin',
     error: '/auth/error',
-    signOut: '/',
-  }
-}
+  },
+  debug: true, // Set to true to get more debugging information
+};
 
-// Export the handlers and auth function
-export const { handlers: { GET, POST }, auth } = NextAuth(authOptions); 
+// Export the handlers and auth function with CSRF protection disabled
+export const { handlers: { GET, POST }, auth } = NextAuth({
+  ...authConfig,
+  trustHost: true
+}); 

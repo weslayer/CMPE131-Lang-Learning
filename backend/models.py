@@ -10,7 +10,7 @@ class PyObjectId(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v):
+    def validate(cls, v, info=None, **kwargs):
         # For UUIDs or string IDs, just return as string
         if isinstance(v, str) and not ObjectId.is_valid(v):
             return v
@@ -40,21 +40,9 @@ class User(BaseModel):
     email: EmailStr
     name: Annotated[str, StringConstraints(min_length=1, max_length=100)]
     picture: Optional[str] = None
-    provider: Optional[str] = "jwt"  # Authentication provider (jwt, google, etc.)
+    provider: Optional[str] = "google"
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
-
-# User login model for authentication
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: Annotated[str, StringConstraints(min_length=8)]
-
-# User creation model with password
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: Annotated[str, StringConstraints(min_length=8)]
-    name: Annotated[str, StringConstraints(min_length=1, max_length=100)]
-    picture: Optional[str] = None
 
 class Flashcard(BaseModel):
     model_config = ConfigDict(
@@ -90,3 +78,4 @@ class Deck(BaseModel):
     cards: List[PyObjectId] = Field(default_factory=list, max_items=1000)
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now) 
+    

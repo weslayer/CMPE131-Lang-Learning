@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { DICTIONARY_SERVER } from "./config";
+import { DICTIONARY_SERVER } from "./src/config";
 
 const nextConfig: NextConfig = {
   images: {

@@ -1,10 +1,9 @@
 "use client"
 
 import { RubyDisplay } from "@/components/ruby-display/ruby-display";
-import styles from "./flashcard-list.module.css";
-import { Flashcard } from '@/types/deck';
+import { Flashcard } from '@/types/flashcard';
 import FlashcardListItem from './flashcard-list-item';
-import React from 'react';
+import styles from "./flashcard-list.module.css";
 
 interface Card {
     term: string,
@@ -64,7 +63,7 @@ export default function FlashcardList({
       <div className="grid grid-cols-1 gap-4">
         {flashcards.map((card, index) => (
           <FlashcardListItem 
-            key={card.id || card._id || `flashcard-${index}`} 
+            key={card._id || `flashcard-${index}`} 
             flashcard={card}
             isActive={index === activeIndex}
             onClick={() => onSelectCard && onSelectCard(index)}

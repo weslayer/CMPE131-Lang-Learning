@@ -11,3 +11,4 @@ if __name__ == "__main__":
     # print(jieba_dict_entries)
     with open("./data/dict.txt.reduced", "w") as file:
         file.write("".join([ " ".join(i) for i in jieba_dict_entries]))
+        

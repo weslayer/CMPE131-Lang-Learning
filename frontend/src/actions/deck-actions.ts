@@ -1,272 +1,129 @@
 "use server"
 
-import { DeckID, DeckOptions, Flashcard, UserID } from "@/types/deck";
-import { DICTIONARY_SERVER } from "../../config";
-import { getAuthHeaders, createAuthFetch } from "@/lib/auth";
+import { DICTIONARY_SERVER } from "@/config";
+import { getAuthHeaders } from "@/lib/auth";
+import { DeckID, DeckOptions } from "@/types/deck";
+import { Flashcard } from "@/types/flashcard";
+
+// Simple API call function with authentication
+async function apiCall(endpoint: string, method: string = 'GET', data?: any): Promise<any> {
+  try {
+    // Get authentication headers with latest session info
+    const headers = await getAuthHeaders();
+    console.log(`Making ${method} request to ${endpoint}`);
+    
+    const response = await fetch(`${DICTIONARY_SERVER}${endpoint}`, {
+      method,
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+      cache: 'no-store'
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`API call to ${endpoint} successful`);
+      return data;
+    }
+    
+    // Better error handling
+    const errorText = await response.text();
+    console.error(`API error (${response.status}) on ${endpoint}: ${errorText}`);
+    
+    if (response.status === 401) {
+      console.log("Authentication error - session may have expired");
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`API call error to ${endpoint}:`, error);
+    return null;
+  }
+}
 
 /**
  * Get all decks for the current user
  */
 export async function getMyDecks(): Promise<any[]> {
-    try {
-        // Get authentication headers
-        const headers = await getAuthHeaders();
-        
-        // Call the API
-        const response = await fetch(`${DICTIONARY_SERVER}/user/decks`, {
-            method: 'GET',
-            headers: headers as HeadersInit,
-            cache: 'no-store',
-        });
-        
-        if (!response.ok) {
-            // Log error details
-            const errorText = await response.text();
-            console.error(`Error fetching decks (${response.status}): ${errorText}`);
-            return [];
-        }
-        
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error("Error fetching decks:", error);
-        return [];
-    }
+  const decks = await apiCall('/user/decks');
+  return decks || [];
 }
 
 /**
  * Create a new deck
  */
 export async function createDeck(options: DeckOptions): Promise<DeckID | null> {
-    try {
-        // Get authentication headers
-        const headers = await getAuthHeaders();
-        
-        // Call the backend directly
-        const apiUrl = `${DICTIONARY_SERVER}/decks`;
-        
-        console.log(`Creating deck "${options.name}" via backend API`);
-        
-        // Properly format the request to match backend expectations
-        const deckData = {
-            name: options.name,
-            description: options.description || "",
-        };
-        
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: headers as HeadersInit,
-            body: JSON.stringify(deckData),
-        });
-        
-        if (!response.ok) {
-            let errorText = '';
-            try {
-                const errorData = await response.json();
-                errorText = JSON.stringify(errorData);
-            } catch (e) {
-                errorText = await response.text();
-            }
-            console.error(`Backend responded with status ${response.status}: ${errorText}`);
-            return null;
-        }
-        
-        const result = await response.json();
-        console.log("Deck created successfully:", result);
-        // The backend returns the ID as '_id'
-        return result._id;
-    } catch (error) {
-        console.error("Error in createDeck:", error);
-        return null;
-    }
+  const deckData = {
+    name: options.name,
+    description: options.description || "",
+  };
+  
+  const result = await apiCall('/decks', 'POST', deckData);
+  return result?._id || null;
 }
 
 /**
  * Get a specific deck by ID
  */
 export async function getDeck(deckId: DeckID): Promise<any | null> {
-    try {
-        // Get authentication headers
-        const headers = await getAuthHeaders();
-        
-        // Call the API
-        const response = await fetch(`${DICTIONARY_SERVER}/decks/${deckId}`, {
-            method: 'GET',
-            headers: headers as HeadersInit,
-            cache: 'no-store',
-        });
-        
-        if (!response.ok) {
-            // Log error details
-            const errorText = await response.text();
-            console.error(`Error fetching deck ${deckId} (${response.status}): ${errorText}`);
-            return null;
-        }
-        
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error(`Error fetching deck ${deckId}:`, error);
-        return null;
-    }
+  return await apiCall(`/decks/${deckId}`);
 }
 
 /**
  * Get the user's default deck
  */
 export async function getDefaultDeck(): Promise<any | null> {
-    try {
-        // Get authentication headers
-        const headers = await getAuthHeaders();
-        
-        // Call the API
-        const response = await fetch(`${DICTIONARY_SERVER}/user/default-deck`, {
-            method: 'GET',
-            headers: headers as HeadersInit,
-            cache: 'no-store',
-        });
-        
-        if (!response.ok) {
-            // Log error details
-            const errorText = await response.text();
-            console.error(`Error fetching default deck (${response.status}): ${errorText}`);
-            return null;
-        }
-        
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error("Error fetching default deck:", error);
-        return null;
-    }
+  return await apiCall('/user/default-deck');
 }
 
 /**
  * Get flashcards for a specific deck
  */
 export async function getDeckFlashcards(deckId: DeckID): Promise<Flashcard[]> {
-    try {
-        // Get authentication headers
-        const headers = await getAuthHeaders();
-        
-        // Call the API
-        const response = await fetch(`${DICTIONARY_SERVER}/decks/${deckId}/flashcards`, {
-            method: 'GET',
-            headers: headers as HeadersInit,
-            cache: 'no-store',
-        });
-        
-        if (!response.ok) {
-            // Log error details
-            const errorText = await response.text();
-            console.error(`Error fetching flashcards for deck ${deckId} (${response.status}): ${errorText}`);
-            return [];
-        }
-        
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error(`Error fetching flashcards for deck ${deckId}:`, error);
-        return [];
-    }
+  const cards = await apiCall(`/decks/${deckId}/flashcards`);
+  return cards || [];
 }
 
 /**
  * Add a flashcard to a specific deck
  */
 export async function addFlashcardToDeck(deckId: DeckID, flashcard: Flashcard) {
-    try {
-        console.log(`Adding flashcard to deck ${deckId}:`, flashcard);
-        
-        // Validate flashcard data
-        if (!flashcard.term || !flashcard.definition) {
-            console.error("Invalid flashcard data: missing required fields");
-            return null;
-        }
+  if (!flashcard.term || !flashcard.definition) {
+    console.error("Invalid flashcard data: missing required fields");
+    return null;
+  }
 
-        // Get authentication headers
-        const headers = await getAuthHeaders();
-        
-        // Call the backend directly with the user information
-        const apiUrl = `${DICTIONARY_SERVER}/decks/${deckId}/flashcards`;
-        
-        console.log(`Calling backend at ${apiUrl}`);
-        
-        // Ensure readings array exists
-        const flashcardData = {
-            term: flashcard.term,
-            reading: Array.isArray(flashcard.reading) ? flashcard.reading : [],
-            definition: flashcard.definition
-        };
-        
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: headers as HeadersInit,
-            body: JSON.stringify(flashcardData),
-        });
-        
-        if (!response.ok) {
-            let errorText = '';
-            try {
-                const errorData = await response.json();
-                errorText = JSON.stringify(errorData);
-            } catch (e) {
-                errorText = await response.text();
-            }
-            console.error(`Backend responded with status ${response.status}: ${errorText}`);
-            return null;
-        }
-        
-        const result = await response.json();
-        console.log("Flashcard added to deck successfully:", result);
-        return result;
-    } catch (error) {
-        console.error(`Error adding flashcard to deck ${deckId}:`, error);
-        return null;
-    }
+  const flashcardData = {
+    term: flashcard.term,
+    reading: Array.isArray(flashcard.reading) ? flashcard.reading : [],
+    definition: flashcard.definition,
+    deck_id: deckId
+  };
+  
+  return await apiCall(`/decks/${deckId}/flashcards`, 'POST', flashcardData);
 }
 
 /**
  * Get all flashcards for the user's default deck
- * This is a convenience function that gets the default deck's flashcards
  */
 export async function getMyFlashcards(): Promise<Flashcard[]> {
-    try {
-        // Get authentication headers
-        const headers = await getAuthHeaders();
-        
-        // First get the default deck
-        const defaultDeck = await getDefaultDeck();
-        if (!defaultDeck) {
-            console.error("Could not retrieve default deck");
-            return [];
-        }
-        
-        // Now get the flashcards for this deck
-        return await getDeckFlashcards(defaultDeck._id);
-    } catch (error) {
-        console.error("Error fetching default deck flashcards:", error);
-        return [];
-    }
+  const deck = await getDefaultDeck();
+  if (!deck) {
+    console.error("Could not retrieve default deck");
+    return [];
+  }
+  
+  return await getDeckFlashcards(deck._id);
 }
 
 /**
  * Create a new flashcard in the user's default deck
- * This is a convenience function that adds a flashcard to the default deck
  */
 export async function createFlashcard(flashcard: Flashcard): Promise<Flashcard | null> {
-    try {
-        // First get the default deck
-        const defaultDeck = await getDefaultDeck();
-        if (!defaultDeck) {
-            console.error("Could not retrieve default deck");
-            return null;
-        }
-        
-        // Add the flashcard to the default deck
-        return await addFlashcardToDeck(defaultDeck._id, flashcard);
-    } catch (error) {
-        console.error("Error creating flashcard in default deck:", error);
-        return null;
-    }
+  const defaultDeck = await getDefaultDeck();
+  if (!defaultDeck) {
+    console.error("Could not retrieve default deck");
+    return null;
+  }
+  
+  return await addFlashcardToDeck(defaultDeck._id, flashcard);
 }   

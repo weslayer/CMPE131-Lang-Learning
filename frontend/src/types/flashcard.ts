@@ -5,4 +5,7 @@ export interface Flashcard {
   definition: string;
   created_at?: string;
   updated_at?: string;
-} 
+  deck_id?: string;
+}
+
+export type FlashcardID = string; 

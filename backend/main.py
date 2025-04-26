@@ -10,13 +10,10 @@ import time
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from pydantic import BaseModel, Field
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
 
 import CDict
 from contextlib import asynccontextmanager
-from models import User, Deck, Flashcard, UserLogin, UserCreate
+from models import User, Deck, Flashcard
 from database import (
     create_deck, get_deck, update_deck, delete_deck,
     create_flashcard, get_flashcard, update_flashcard, delete_flashcard,
@@ -25,13 +22,8 @@ from database import (
 )
 from auth import (
     get_current_user, get_optional_user, create_access_token,
-    get_password_hash, verify_password, authenticate_user, COOKIE_NAME,
-    get_current_user_from_header, secure_get_current_user,
-    get_google_auth_url, exchange_code_for_token, get_google_user_info, CSRF_COOKIE_NAME,
-    generate_csrf_token
+    get_google_auth_url, exchange_code_for_token, get_google_user_info, COOKIE_NAME
 )
-
-# Set up logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -40,8 +32,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("main")
-
-# Rate limiting setup
 limiter = Limiter(key_func=get_remote_address)
 
 c_dict : CDict.CDict = None
@@ -216,53 +206,229 @@ async def root():
     return {"msg": "yo"}
 
 # Authentication routes
-@app.post("/auth/login", response_model=Dict[str, str])
-async def login_for_access_token(response: Response):
-    """
-    Redirect to Google OAuth login as the only authentication method
-    """
+@app.post("/auth/login")
+async def login():
+    """Redirect to Google OAuth login"""
     try:
         auth_url = get_google_auth_url()
-        return {"url": auth_url, "message": "Please use Google OAuth to login"}
+        return {"url": auth_url}
     except Exception as e:
-        logger.error(f"Error during login redirect: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error redirecting to Google login"
         )
 
-@app.post("/auth/register", response_model=Dict[str, str])
-async def register_user(response: Response):
-    """
-    Redirect to Google OAuth as the only registration method
-    """
-    try:
-        auth_url = get_google_auth_url()
-        return {"url": auth_url, "message": "Please use Google OAuth to register"}
-    except Exception as e:
-        logger.error(f"Error during registration redirect: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error redirecting to Google registration"
-        )
-
-@app.post("/auth/logout")
-async def logout(response: Response):
-    """
-    Logout the current user by clearing the auth cookie
-    """
-    response.delete_cookie(
-        key=COOKIE_NAME,
-        httponly=True,
-        secure=True,
-        samesite="lax"
-    )
-    return {"message": "Successfully logged out"}
-
 @app.get("/auth/me", response_model=User)
 async def get_authenticated_user(current_user: User = Depends(get_current_user)):
     """Get the currently authenticated user's details"""
     return current_user
+
+@app.get("/auth/status")
+async def auth_status(request: Request, current_user: Optional[User] = Depends(get_optional_user)):
+    """Check authentication status"""
+    if current_user:
+        return {
+            "authenticated": True,
+            "user": {
+                "id": current_user.id,
+                "email": current_user.email,
+                "name": current_user.name,
+                "provider": current_user.provider
+            }
+        }
+    else:
+        return {
+            "authenticated": False,
+            "message": "User is not authenticated"
+        }
+
+@app.get("/auth/google/login")
+async def google_login():
+    """Start the Google OAuth flow"""
+    try:
+        auth_url = get_google_auth_url()
+        return {"url": auth_url}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error starting Google authentication"
+        )
+
+@app.get("/auth/google/callback")
+async def google_callback(request: Request, response: Response, code: str):
+    """Handle the Google OAuth callback, create/update user and return JWT token"""
+    try:
+        # Exchange code for token
+        token_data = await exchange_code_for_token(code)
+        if not token_data or "access_token" not in token_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to obtain access token"
+            )
+        
+        # Get user info from Google
+        user_info = await get_google_user_info(token_data)
+        if not user_info:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to get user information"
+            )
+        
+        # Extract user details
+        google_id = user_info.get("id")
+        email = user_info.get("email")
+        name = user_info.get("name")
+        picture = user_info.get("picture")
+        
+        if not google_id or not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Incomplete user information from Google"
+            )
+        
+        # Format the Google ID as a string with google- prefix
+        user_id = f"google-{google_id}"
+        
+        # Get or create user in our database
+        from database import get_or_create_user
+        user = await get_or_create_user(user_id, email, name, picture)
+        
+        # Update the provider field to clearly indicate this is a Google user
+        if user:
+            from database import update_user
+            await update_user(user_id, {"provider": "google"})
+            user = await get_user_by_id(user_id)
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create or retrieve user"
+            )
+        
+        # Create JWT token for the user
+        token_data = {
+            "sub": user_id,
+            "email": email,
+            "name": name
+        }
+        access_token = create_access_token(token_data)
+        
+        # Set cookie with JWT token
+        response.set_cookie(
+            key=COOKIE_NAME,
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=60 * 60 * 24 * 7  # 7 days
+        )
+        
+        # Redirect to welcome page
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+        welcome_url = f"{frontend_url}/auth/welcome?name={name}&email={email}"
+        return RedirectResponse(url=welcome_url)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error during Google authentication: {str(e)}"
+        )
+
+@app.post("/auth/token")
+async def generate_token(request: Request):
+    """Generate a JWT token for authenticated NextAuth.js users"""
+    try:
+        # Parse request body
+        try:
+            body = await request.json()
+        except Exception:
+            # Try form data as fallback
+            try:
+                form_data = await request.form()
+                body = dict(form_data)
+            except Exception:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid request body format"
+                )
+        
+        # Extract user ID and email
+        user_id = body.get("user_id")
+        email = body.get("email")
+        
+        # Database imports
+        from database import get_user_by_id, get_user_by_email
+        
+        # Try finding the user
+        user = None
+        if user_id:
+            user = await get_user_by_id(user_id)
+        
+        if not user and email:
+            user = await get_user_by_email(email)
+            
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+            
+        # Create token data
+        token_payload = {
+            "sub": str(user["_id"]),
+            "email": user["email"],
+            "name": user.get("name", "")
+        }
+        
+        # Generate JWT token
+        access_token = create_access_token(token_payload)
+        
+        # Return token
+        return {
+            "access_token": access_token,
+            "token_type": "bearer"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating token: {str(e)}"
+        )
+
+@app.get("/auth/logout")
+async def logout(response: Response):
+    """Clear authentication cookie"""
+    response.delete_cookie(key=COOKIE_NAME)
+    return {"message": "Successfully logged out"}
+
+@app.post("/auth/google/register")
+async def register_google_user(user_data: User):
+    """Register/update users in our backend database"""
+    try:
+        # Get or create user in our database
+        from database import get_or_create_user
+        user = await get_or_create_user(
+            user_id=user_data.id, 
+            email=user_data.email, 
+            name=user_data.name, 
+            picture=user_data.picture
+        )
+        
+        # Update the provider field to clearly indicate this is a Google user
+        if user:
+            from database import update_user
+            await update_user(user_data.id, {"provider": "google"})
+            
+        return {"success": True, "user_id": user_data.id}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error registering user: {str(e)}"
+        )
 
 @app.get("/user/decks", response_model=List[Deck])
 async def get_current_user_decks(current_user: User = Depends(get_current_user)):
@@ -368,435 +534,6 @@ async def create_user_flashcard(request: Request, flashcard: Flashcard, current_
         raise HTTPException(
             status_code=500,
             detail=f"Error creating flashcard: {str(e)}"
-        )
-
-@app.get("/auth/status")
-async def auth_status(request: Request, current_user: Optional[User] = Depends(get_optional_user)):
-    """Check authentication status"""
-    if current_user:
-        return {
-            "authenticated": True,
-            "user": {
-                "id": current_user.id,
-                "email": current_user.email,
-                "name": current_user.name,
-                "provider": getattr(current_user, "provider", "jwt")
-            }
-        }
-    else:
-        return {
-            "authenticated": False,
-            "message": "User is not authenticated"
-        }
-
-@app.get("/auth/google/login")
-async def google_login():
-    """
-    Start the Google OAuth flow by generating the authorization URL
-    """
-    try:
-        auth_url = get_google_auth_url()
-        return {"url": auth_url}
-    except Exception as e:
-        print(f"Error generating Google Auth URL: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error starting Google authentication"
-        )
-
-@app.get("/auth/google/callback")
-async def google_callback(request: Request, response: Response, code: str):
-    """
-    Handle the Google OAuth callback, create/update user and return JWT token
-    """
-    try:
-        logger.info(f"Google OAuth callback received with code length: {len(code)}")
-        
-        # Exchange code for token
-        token_data = await exchange_code_for_token(code)
-        if not token_data or "access_token" not in token_data:
-            logger.error(f"Failed to obtain access token, token data: {token_data}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to obtain access token"
-            )
-        
-        # Get user info from Google
-        user_info = await get_google_user_info(token_data)
-        if not user_info:
-            logger.error("Failed to get user information from Google")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to get user information"
-            )
-        
-        # Log successful user info retrieval
-        logger.info(f"Successfully retrieved Google user info for email: {user_info.get('email')}")
-        
-        # Extract user details
-        google_id = user_info.get("id")
-        email = user_info.get("email")
-        name = user_info.get("name")
-        picture = user_info.get("picture")
-        
-        if not google_id or not email:
-            logger.error(f"Incomplete user information from Google: {user_info}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Incomplete user information from Google"
-            )
-        
-        # Format the Google ID as a string with google- prefix
-        user_id = f"google-{google_id}"
-        
-        # Get or create user in our database
-        from database import get_or_create_user
-        user = await get_or_create_user(user_id, email, name, picture)
-        logger.info(f"User retrieved or created with ID: {user_id}")
-        
-        # Update the provider field to clearly indicate this is a Google user
-        if user:
-            from database import update_user
-            await update_user(user_id, {"provider": "google"})
-            user = await get_user_by_id(user_id)
-        
-        if not user:
-            logger.error(f"Failed to create or retrieve user with ID: {user_id}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create or retrieve user"
-            )
-        
-        # Create JWT token for the user
-        token_data = {
-            "sub": user_id,
-            "email": email,
-            "name": name
-        }
-        access_token = create_access_token(token_data)
-        logger.info(f"JWT token created for user: {user_id}")
-        
-        # Generate a CSRF token for protection against CSRF attacks
-        csrf_token = generate_csrf_token()
-        
-        # Set cookie with JWT token
-        response.set_cookie(
-            key=COOKIE_NAME,
-            value=access_token,
-            httponly=True,
-            secure=True,
-            samesite="lax",
-            max_age=60 * 60 * 24 * 7  # 7 days
-        )
-        
-        # Set CSRF token cookie (not httponly so JavaScript can read it)
-        response.set_cookie(
-            key=CSRF_COOKIE_NAME,
-            value=csrf_token,
-            httponly=False,  # JS needs to read this to include in headers
-            secure=True,
-            samesite="lax",
-            max_age=60 * 60 * 24 * 7  # 7 days
-        )
-        
-        # Redirect to welcome page or frontend with CSRF token as query parameter
-        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-        welcome_url = f"{frontend_url}/auth/welcome?name={name}&email={email}&csrf_token={csrf_token}"
-        logger.info(f"Redirecting authenticated user to: {welcome_url}")
-        return RedirectResponse(url=welcome_url)
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error in Google callback: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error during Google authentication: {str(e)}"
-        )
-
-@app.get("/api/my-flashcards", response_model=List[Flashcard])
-async def get_my_flashcards(
-    request: Request, 
-    current_user: User = Depends(secure_get_current_user)
-):
-    """
-    Streamlined endpoint to get all flashcards for the authenticated user
-    using secure JWT token authentication
-    """
-    try:
-        # At this point we know the current_user exists because of the Depends
-        
-        # Import here to avoid circular references
-        from database import get_user_flashcards_direct
-        
-        # Log the authenticated user
-        print(f"Fetching flashcards for user: {current_user.id} ({current_user.email})")
-        
-        # Use the optimized function with the user's ID
-        flashcards = await get_user_flashcards_direct(str(current_user.id))
-        
-        if flashcards is None:
-            # Log the error but return empty list instead of error
-            print(f"Error retrieving flashcards for user {current_user.id}")
-            return []
-            
-        # Return the flashcards directly
-        print(f"Successfully fetched {len(flashcards)} flashcards for user {current_user.id}")
-        return flashcards
-        
-    except Exception as e:
-        print(f"Error in get_my_flashcards: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error fetching flashcards: {str(e)}"
-        )
-
-@app.post("/api/my-flashcards", response_model=Flashcard)
-async def create_my_flashcard(
-    request: Request, 
-    flashcard: Flashcard, 
-    current_user: User = Depends(secure_get_current_user)
-):
-    """
-    Streamlined endpoint to create a flashcard and add it to the user's default deck
-    using secure JWT token authentication
-    """
-    try:
-        # At this point we know the current_user exists because of the Depends
-        
-        # Import here to avoid circular references
-        from database import create_user_flashcard_direct
-        
-        # Log the authenticated user
-        print(f"Creating flashcard for user: {current_user.id} ({current_user.email})")
-        print(f"Flashcard data: {flashcard.model_dump()}")
-        
-        # Convert Pydantic model to dict
-        flashcard_data = flashcard.model_dump(by_alias=True)
-        
-        # Use the direct function with the user's ID
-        created_flashcard = await create_user_flashcard_direct(
-            str(current_user.id), 
-            flashcard_data
-        )
-        
-        if not created_flashcard:
-            print(f"Failed to create flashcard for user {current_user.id}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create flashcard"
-            )
-        
-        # Return the created flashcard
-        print(f"Successfully created flashcard for user {current_user.id}: {created_flashcard.get('_id')}")
-        return created_flashcard
-        
-    except Exception as e:
-        print(f"Error in create_my_flashcard: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating flashcard: {str(e)}"
-        )
-
-@app.get("/auth/debug")
-async def auth_debug(request: Request, current_user: Optional[User] = Depends(get_optional_user)):
-    """Debug endpoint to check authentication state"""
-    try:
-        # Get all headers for debugging
-        headers = dict(request.headers)
-        
-        # Clean up sensitive headers for logging
-        if "authorization" in headers:
-            headers["authorization"] = "Bearer [REDACTED]"
-        
-        # Get cookie information
-        cookies = request.cookies
-        auth_cookie = None
-        if COOKIE_NAME in cookies:
-            auth_cookie = "[REDACTED]"  # Don't show the actual token
-        
-        return {
-            "headers": headers,
-            "cookies": {
-                "auth_cookie_present": auth_cookie is not None
-            },
-            "authenticated": current_user is not None,
-            "user": {
-                "id": current_user.id if current_user else None,
-                "email": current_user.email if current_user else None,
-                "name": current_user.name if current_user else None,
-                "provider": current_user.provider if current_user else None
-            } if current_user else None
-        }
-    except Exception as e:
-        print(f"Error in auth debug endpoint: {str(e)}")
-        return {
-            "error": str(e),
-            "message": "Error in auth debug endpoint"
-        }
-
-@app.get("/auth/google/test")
-async def test_google_oauth(current_user: Optional[User] = Depends(get_optional_user)):
-    """Test endpoint to verify Google OAuth integration"""
-    if current_user:
-        return {
-            "status": "authenticated",
-            "user_info": {
-                "id": current_user.id,
-                "email": current_user.email,
-                "name": current_user.name,
-                "provider": current_user.provider,
-                "picture": current_user.picture
-            },
-            "is_google_user": current_user.provider == "google",
-            "message": "Google OAuth is working correctly!"
-        }
-    else:
-        # Return unauthenticated response with instructions
-        google_login_url = get_google_auth_url()
-        return {
-            "status": "unauthenticated",
-            "message": "Not authenticated. Please use Google OAuth to log in.",
-            "login_url": google_login_url
-        }
-
-@app.get("/auth/welcome")
-async def welcome_page(request: Request, current_user: Optional[User] = Depends(get_optional_user)):
-    """
-    Welcome page after successful Google authentication
-    """
-    if current_user:
-        return {
-            "message": f"Welcome, {current_user.name}!",
-            "authenticated": True,
-            "user": {
-                "id": current_user.id,
-                "name": current_user.name,
-                "email": current_user.email,
-                "provider": current_user.provider,
-                "picture": current_user.picture
-            },
-            "next": "/my-flashcards"  # Redirect to flashcards page next
-        }
-    else:
-        auth_url = get_google_auth_url()
-        return {
-            "message": "You are not logged in",
-            "authenticated": False,
-            "login_url": auth_url
-        }
-
-@app.post("/auth/token")
-async def generate_token(request: Request):
-    """Generate a JWT token for authenticated NextAuth.js users, skipping Pydantic validation"""
-    try:
-        # Log request headers for debugging
-        headers = dict(request.headers)
-        content_type = headers.get('content-type', 'unknown')
-        logger.info(f"Token request with content-type: {content_type}")
-        
-        # Extract JSON directly
-        try:
-            body = await request.json()
-        except Exception as e:
-            logger.error(f"Failed to parse JSON: {str(e)}")
-            # Try form data as fallback
-            try:
-                form_data = await request.form()
-                body = dict(form_data)
-            except Exception as form_e:
-                logger.error(f"Failed to parse form data: {str(form_e)}")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid request body format"
-                )
-        
-        # Log the parsed body
-        logger.info(f"Parsed request body: {body}")
-        
-        # Extract user ID and email
-        user_id = body.get("user_id")
-        email = body.get("email")
-        
-        # Database imports
-        from database import get_user_by_id, get_user_by_email
-        
-        # Try finding the user
-        user = None
-        if user_id:
-            logger.info(f"Looking up user by ID: {user_id}")
-            user = await get_user_by_id(user_id)
-        
-        if not user and email:
-            logger.info(f"Looking up user by email: {email}")
-            user = await get_user_by_email(email)
-            
-        if not user:
-            logger.warning(f"User not found. user_id={user_id}, email={email}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found"
-            )
-            
-        # Create token data
-        token_payload = {
-            "sub": str(user["_id"]),
-            "email": user["email"],
-            "name": user.get("name", "")
-        }
-        
-        # Generate JWT token
-        access_token = create_access_token(token_payload)
-        logger.info(f"Token generated for user: {user['_id']}")
-        
-        # Create a JSON-compatible response and return it directly
-        response_data = {
-            "access_token": access_token,
-            "token_type": "bearer"
-        }
-        return JSONResponse(content=jsonable_encoder(response_data))
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error generating token: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error generating token: {str(e)}"
-        )
-
-class GoogleUser(BaseModel):
-    id: str
-    email: str
-    name: str
-    picture: Optional[str] = None
-
-@app.post("/auth/google/register")
-async def register_google_user(user_data: GoogleUser):
-    """
-    Endpoint for NextAuth.js to register/update users in our backend database
-    """
-    try:
-        # Get or create user in our database
-        from database import get_or_create_user
-        user = await get_or_create_user(
-            user_id=user_data.id, 
-            email=user_data.email, 
-            name=user_data.name, 
-            picture=user_data.picture
-        )
-        
-        # Update the provider field to clearly indicate this is a Google user
-        if user:
-            from database import update_user
-            await update_user(user_data.id, {"provider": "google"})
-            
-        return {"success": True, "user_id": user_data.id}
-    except Exception as e:
-        logger.error(f"Error registering Google user: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error registering user: {str(e)}"
         )
 
 @app.get("/auth/healthcheck", response_model=Dict[str, bool])

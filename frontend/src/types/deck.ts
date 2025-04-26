@@ -1,11 +1,4 @@
-export interface Flashcard {
-    _id?: string;
-    id?: string;
-    term: string;
-    reading: string[];
-    definition: string;
-    created_at?: string;
-};
+import { Flashcard } from './flashcard';
 
 export interface Deck {
     id: DeckID;
@@ -16,7 +9,6 @@ export interface Deck {
     owner_id?: UserID;
 }
 
-export type FlashcardID = string;
 export type DeckID = string;
 export type UserID = string;
 
