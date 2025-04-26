@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { RubyDisplay } from '@/components/ruby-display/ruby-display'
+import { Button } from '@/components/ui/button'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { RubyDisplay } from '@/components/ruby-display/ruby-display'
+import { useEffect, useState } from 'react'
 
 interface Flashcard {
   id: string
@@ -128,7 +128,7 @@ export default function FlashcardsPage() {
                 </div>
                 
                 <div className="flex-grow flex flex-col items-center justify-center">
-                  <div className="text-2xl font-bold mb-8">
+                  <div className="text-5xl font-bold mb-8 text-gray-900">
                     {flashcards[currentCard].reading.length > 0 ? (
                       <RubyDisplay
                         terms={
@@ -147,8 +147,8 @@ export default function FlashcardsPage() {
                   
                   {showAnswer ? (
                     <div className="text-center">
-                      <h3 className="text-lg font-medium mb-2">Translation:</h3>
-                      <p className="text-gray-700">
+                      <h3 className="text-xl font-semibold mb-2 text-gray-800">Translation:</h3>
+                      <p className="text-gray-900 text-lg">
                         {flashcards[currentCard].definition}
                       </p>
                     </div>

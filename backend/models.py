@@ -60,7 +60,7 @@ class Flashcard(BaseModel):
 
     @field_validator('term')
     def validate_chinese_term(cls, v):
-        if not any('\u4e00-\u9fff' in char for char in v):
+        if not any('\u4e00' <= char <= '\u9fff' for char in v):
             raise ValueError("Term must contain at least one Chinese character")
         return v
 

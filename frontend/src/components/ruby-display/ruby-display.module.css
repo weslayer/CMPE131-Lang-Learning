@@ -1,5 +1,12 @@
-
-
 .ruby {
     font-family: --font-chocolate, --font-geist-sans, Arial, Helvetica, sans-serif;
+    color: #111827;
+    font-size: 2.5rem;
+}
+
+.ruby rt {
+    font-size: 0.8rem;
+    color: #4B5563; /* Gray 600 for the reading text */
+    line-height: 1.2;
+    text-align: center;
 }

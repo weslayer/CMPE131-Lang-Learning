@@ -590,6 +590,16 @@ async def test_google_oauth_flow():
             "error": str(e)
         }
 
+@app.get("/api/my-flashcards", response_model=List[Flashcard])
+async def get_my_flashcards(request: Request, current_user: User = Depends(get_current_user)):
+    """Get all flashcards for the current user (alias for /user/flashcards)"""
+    return await get_user_flashcards(request, current_user)
+
+@app.post("/api/my-flashcards", response_model=Flashcard)
+async def create_my_flashcard(request: Request, flashcard: Flashcard, current_user: User = Depends(get_current_user)):
+    """Create a new flashcard (alias for /user/flashcards)"""
+    return await create_user_flashcard(request, flashcard, current_user)
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000) 
     

@@ -1,12 +1,12 @@
 "use client"
-import { Flashcard, FlashcardBack, FlashcardFront } from "@/components/flashcard-view/flashcard-view";
-import { RubyDisplay } from "@/components/ruby-display/ruby-display";
 import { TimelineControl } from "@/components/flashcard-control-bar/flashcard-control-bar";
 import FlashcardList from "@/components/flashcard-list/flashcard-list";
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import styles from "./style.module.css";
+import { Flashcard, FlashcardBack, FlashcardFront } from "@/components/flashcard-view/flashcard-view";
+import { RubyDisplay } from "@/components/ruby-display/ruby-display";
 import { Flashcard as FlashcardType } from "@/types/deck";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import styles from "./style.module.css";
 
 interface FlashcardData extends FlashcardType {
   id?: string;
@@ -99,10 +99,17 @@ export default function DeckPage({ params }: { params: { deck: string } }) {
     <main className={styles.main}>
       <Flashcard side={side} onClick={() => setSide(prev => !prev)}>
         <FlashcardFront>
-          <RubyDisplay terms={terms} />
+          <div className="text-gray-900 text-4xl font-bold">
+            <RubyDisplay terms={terms} />
+          </div>
         </FlashcardFront>
         <FlashcardBack>
-          {currentCard.definition}
+          <div className="text-center">
+            <h3 className="text-xl font-semibold mb-2 text-gray-800">Translation:</h3>
+            <p className="text-gray-900 text-lg">
+              {currentCard.definition}
+            </p>
+          </div>
         </FlashcardBack>
       </Flashcard>
 
