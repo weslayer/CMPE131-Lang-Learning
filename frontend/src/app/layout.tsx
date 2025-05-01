@@ -19,7 +19,8 @@ const geistMono = Geist_Mono({
 
 const chocolateClassicalSans = Chocolate_Classical_Sans({
   weight: "400",
-  variable: "--font-chocolate"
+  variable: "--font-chocolate",
+  subsets: ["latin"]
 });
 
 export const metadata: Metadata = {

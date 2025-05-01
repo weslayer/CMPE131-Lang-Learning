@@ -1,9 +1,12 @@
 "use server"
 
-import { DICTIONARY_SERVER } from "@/config";
+import { DATABASE_URI, DICTIONARY_SERVER } from "@/config";
 import { getAuthHeaders } from "@/lib/auth";
-import { DeckID, DeckOptions } from "@/types/deck";
+import { DeckID, DeckOptions, User, UserID } from "@/types/deck";
 import { Flashcard } from "@/types/flashcard";
+
+import { MongoClient, ObjectId } from "mongodb";
+import { database } from "./database";
 
 // Simple API call function with authentication
 async function apiCall(endpoint: string, method: string = 'GET', data?: any): Promise<any> {
@@ -126,4 +129,36 @@ export async function createFlashcard(flashcard: Flashcard): Promise<Flashcard |
   }
   
   return await addFlashcardToDeck(defaultDeck._id, flashcard);
-}   
+}
+
+
+
+// import { DATABASE_URI } from "../../config";
+
+
+const users = database.collection("users");
+
+export async function getUser(user: UserID) : Promise<User|null> {
+
+  const result = await users.findOne({
+    _id: ObjectId.createFromHexString(user)
+  });
+
+  if(!result) {
+    return null;
+  }
+
+  return {
+    id: result._id.toString() ?? "",
+    decks: result.decks ?? []
+  };
+}
+
+
+
+
+
+
+// export async function getUserFlashcards(user: UserID) : Promise<DeckID> {
+
+// }

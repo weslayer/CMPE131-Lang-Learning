@@ -27,49 +27,42 @@ const authConfig: NextAuthConfig = {
         console.log("Session refresh detected, returning existing token");
         return token;
       }
-      
-      // When signing in, copy the user data to the token
-      if (user) {
-        console.log("User data available in jwt callback:", user);
-        token.sub = user.id; // Set sub claim for proper JWT handling
-        token.name = user.name;
-        token.email = user.email;
-        token.picture = user.image;
-      }
-      
-      // Store Google user ID with proper format in token
-      if (account?.provider === "google" && user?.id) {
-        const googleId = `google-${user.id}`;
-        console.log(`Setting Google ID in token: ${googleId}`);
-        token.id = googleId;
+
+      try {
+        console.log(`Registering user in backend: ${user.id}`);
         
-        // Register user with backend
-        try {
-          console.log(`Registering user in backend: ${googleId}`);
+        const response = await fetch(`${DICTIONARY_SERVER}/auth/google/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: user.id,
+            email: user.email || "",
+            name: user.name || "User",
+            picture: user.image || "",
+          }),
+          cache: 'no-store',
+        });
+
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Backend registration failed (${response.status}): ${errorText}`);
+        } else {
+          const result = await response.json();
+          console.log(`User registered successfully: ${result.user_id}`);
           
-          const response = await fetch(`${DICTIONARY_SERVER}/auth/google/register`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: googleId,
-              email: user.email || "",
-              name: user.name || "User",
-              picture: user.image || "",
-            }),
-            cache: 'no-store',
-          });
-          
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Backend registration failed (${response.status}): ${errorText}`);
-          } else {
-            const result = await response.json();
-            console.log(`User registered successfully: ${result.user_id}`);
-          }
-        } catch (error) {
-          console.error("User registration error:", error);
+          token = {
+            id: result.user_id,
+            name: user.name,
+            email: user.email,
+            picture: user.image,
+          };
+
         }
+      } catch (error) {
+        console.error("User registration error:", error);
       }
+    
       
       console.log("Final token contents:", token);
       return token;

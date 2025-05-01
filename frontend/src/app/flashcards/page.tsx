@@ -1,5 +1,6 @@
 "use client"
 
+import { getUser } from '@/actions/deck-actions'
 import { RubyDisplay } from '@/components/ruby-display/ruby-display'
 import { Button } from '@/components/ui/button'
 import { useSession } from 'next-auth/react'
@@ -26,44 +27,18 @@ export default function FlashcardsPage() {
   useEffect(() => {
     if (status === 'loading') return;
     
-    if (status === 'unauthenticated') {
+    if (status === 'unauthenticated' || !session?.user.id) {
       setLoading(false);
       return;
     }
 
-    async function fetchFlashcards() {
-      try {
-        setLoading(true);
-        console.log("Fetching flashcards for user");
-        
-        // Call our API which uses NextAuth session
-        const response = await fetch('/api/user/flashcards', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include', // Important: include credentials for session cookies
-        });
-        
-        if (!response.ok) {
-          console.error(`Flashcard fetch failed: ${response.status}`);
-          const errorText = await response.text();
-          console.error("Error details:", errorText);
-          throw new Error(`Failed to fetch flashcards: ${response.status}`);
-        }
-        
-        const cards = await response.json();
-        console.log(`Fetched ${cards.length} flashcards successfully`);
-        setFlashcards(cards);
-      } catch (err) {
-        console.error('Error fetching flashcards:', err);
-        setError(`Failed to load flashcards: ${(err as Error).message}`);
-      } finally {
-        setLoading(false);
-      }
-    }
+    getUser(session?.user.id).then((user) => {
+      console.log(user);
+    }).catch(() => {
+      // Error
+    }) ;
     
-    fetchFlashcards();
+    // fetchFlashcards();
   }, [status]);
 
   const nextCard = () => {
@@ -97,8 +72,8 @@ export default function FlashcardsPage() {
   return (
     <div className="max-w-3xl mx-auto py-12 px-4">
       <h1 className="text-2xl font-bold mb-6">Your Flashcards</h1>
-      
-      {loading ? (
+
+      {/* {loading ? (
         <div className="flex justify-center py-12">
           <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full"></div>
         </div>
@@ -190,7 +165,7 @@ export default function FlashcardsPage() {
             </Link>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 } 

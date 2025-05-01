@@ -410,20 +410,21 @@ async def register_google_user(user_data: User):
     """Register/update users in our backend database"""
     try:
         # Get or create user in our database
-        from database import get_or_create_user
-        user = await get_or_create_user(
-            user_id=user_data.id, 
-            email=user_data.email, 
-            name=user_data.name, 
-            picture=user_data.picture
-        )
+        from database import get_user_by_google, create_user_by_google
         
-        # Update the provider field to clearly indicate this is a Google user
-        if user:
-            from database import update_user
-            await update_user(user_data.id, {"provider": "google"})
-            
-        return {"success": True, "user_id": user_data.id}
+        logging.debug("Looking for user with email \"%s\".", user_data.email)
+        # user = await get_user_by_google(user_data.id)
+        user = await get_user_by_email(user_data.email)
+        if(user):
+            return {"success": True, "user_id": str(user["_id"])}
+        
+                
+        logging.debug("Creating user with google id \"%s\".", user_data.id)
+        user = await create_user_by_google(user_data.id, user_data.email, user_data.name, user_data.picture)
+        if(user):
+            return {"success": True, "user_id": str(user["_id"])}
+
+        raise "User does not exist, and failed to create user."
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

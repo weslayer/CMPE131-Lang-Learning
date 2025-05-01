@@ -74,6 +74,55 @@ async def get_user_by_email(email: str):
         logger.error(f"Error getting user by email: {str(e)}")
         raise
 
+        raise
+
+async def get_user_by_google(google_id: str):
+    try:
+        collection = await get_users_collection()
+        user = await collection.find_one({"google_id": google_id})
+        return user
+    except Exception as e:
+        logger.error(f"Error getting user by google id: {str(e)}")
+        raise
+
+    
+
+async def create_user_by_google(google_id: str, email: str, name: str = "", picture: str = ""):
+    try:
+        logging.info("Creating user with id \"%s\" via google.", email)
+        # Get the users collection
+        collection = await get_users_collection()
+        
+        # Step 1: Try to find user by ID
+        user = await get_user_by_id(google_id)
+        
+        if(user):
+            raise "User already exists"
+        
+        
+        # Step 3: Create new user
+        timestamp = get_timestamp()
+        user_data = {
+            "email": email,
+            "name": name or "User",
+            "picture": picture,
+            "provider": "google",
+            # "google_id": google_id,
+            "created_at": timestamp,
+            "updated_at": timestamp,
+            "decks": []
+        }
+        
+        # Insert the new user
+        result = await collection.insert_one(user_data)
+        
+        # Return the newly created user
+        return await get_user_by_id(result.inserted_id)
+        
+    except Exception as e:
+        logger.error(f"Error in create_user_via_google: {str(e)}")
+        raise
+    
 async def create_user(user_data):
     try:
         collection = await get_users_collection()
@@ -108,7 +157,6 @@ async def create_user(user_data):
         return None
     except Exception as e:
         logger.error(f"Error creating user: {str(e)}")
-        raise
 
 async def get_deck(deck_id: str):
     try:
@@ -118,6 +166,9 @@ async def get_deck(deck_id: str):
     except Exception as e:
         logger.error(f"Error getting deck: {str(e)}")
         raise
+    
+    
+    
 
 async def create_deck(deck_data: dict):
     try:
@@ -134,6 +185,11 @@ async def create_deck(deck_data: dict):
     except Exception as e:
         logger.error(f"Error creating deck: {str(e)}")
         raise
+
+
+
+
+
 
 async def update_deck(deck_id: str, update_data: dict):
     try:
@@ -378,7 +434,8 @@ async def get_or_create_user(user_id: str, email: str, name: str = "", picture: 
             "picture": picture,
             "provider": provider,
             "created_at": timestamp,
-            "updated_at": timestamp
+            "updated_at": timestamp,
+            "decks": []
         }
         
         # Insert the new user
