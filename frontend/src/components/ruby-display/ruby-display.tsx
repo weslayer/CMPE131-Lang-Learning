@@ -18,3 +18,25 @@ export function RubyDisplay({
         })}
     </>
 }
+
+
+interface MultiRubyDisplayArgs {
+    text: string,
+    reading: string
+}
+export function MultiRubyDisplay({
+    text, reading
+} : MultiRubyDisplayArgs) {
+
+    const terms = text.split(";");
+    const readings = reading.split(";");
+
+    return <>
+        {terms.map((term, i) => {
+            return <ruby key={i} className={styles["ruby"]}>
+                {term}
+                <rt>{i < readings.length ? readings[i] : ""}</rt>
+            </ruby>
+        })}
+    </>
+}

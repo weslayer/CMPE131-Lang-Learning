@@ -3,7 +3,7 @@ import time
 
 import pygtrie
 
-def syllable_tone_to_unicode(syllable:str, tone:int):
+def syllable_tone_to_unicode(syllable:str, tone:int) -> str:
     diacritic_mappings = [
         "\u0304", "\u0301", "\u030C", "\u0300", "\u0307"
     ]
@@ -33,7 +33,19 @@ def syllable_tone_to_unicode(syllable:str, tone:int):
     return syllable
 
 
-def reading_to_syllable(syllable: str):
+def reading_to_syllable(syllable: str) -> str:
+    """
+        Convert a ascii reading to a unicode reading
+        reading_to_syllable("nu2") -> nú
+        reading_to_syllable("fan1") -> fān
+        reading_to_syllable("wo3") -> wǒ
+
+    Args:
+        syllable (str): Ascii reading
+
+    Returns:
+        str: Unicode reading
+    """
     if("0" <= syllable[-1] and syllable[-1] <= "9"):
         return syllable_tone_to_unicode(syllable[:-1], int(syllable[-1])-1)
     return syllable
@@ -45,7 +57,7 @@ class CDictEntry:
         self.trad = trad
         self.simp = simp
         # print(reading)
-        self.reading = [ reading_to_syllable(syllable) for syllable in reading.lower().split(" ")]
+        self.reading = ";".join([ reading_to_syllable(syllable) for syllable in reading.lower().split(" ")])
         self.senses = senses
 
 class CDict:

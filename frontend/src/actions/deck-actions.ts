@@ -1,12 +1,14 @@
 "use server"
 
-import { DATABASE_URI, DICTIONARY_SERVER } from "@/config";
+import { DICTIONARY_SERVER } from "@/config";
 import { getAuthHeaders } from "@/lib/auth";
 import { DeckID, DeckOptions, User, UserID } from "@/types/deck";
 import { Flashcard } from "@/types/flashcard";
 
-import { MongoClient, ObjectId } from "mongodb";
-import { database } from "./database";
+import { ObjectId } from "mongodb";
+import { client, database } from "./database";
+
+import { auth } from "@/app/api/auth/[...nextauth]/route";
 
 // Simple API call function with authentication
 async function apiCall(endpoint: string, method: string = 'GET', data?: any): Promise<any> {
@@ -55,17 +57,45 @@ export async function getMyDecks(): Promise<any[]> {
  * Create a new deck
  */
 export async function createDeck(options: DeckOptions): Promise<DeckID | null> {
+  const session = await auth();
+
+  if(!session?.user.id ) {
+    throw "Missing session";
+  } 
+
   const deckData = {
     name: options.name,
     description: options.description || "",
+    created_at: new Date(),
+    updated_at: new Date(),
+    owner: ObjectId.createFromHexString(session?.user.id),
+    cards: []
   };
   
-  const result = await apiCall('/decks', 'POST', deckData);
-  return result?._id || null;
+
+  const dbSession = client.startSession();
+  dbSession.startTransaction();
+  try{
+    const deckResult = await database.collection("decks").insertOne(deckData);
+    // const createdId = deckResult.insertedId.toHexString();
+    
+    await database.collection("users").findOneAndUpdate({
+      _id: deckData.owner
+    }, {
+      $push: {
+        decks: deckResult.insertedId
+      }
+    });
+    dbSession.commitTransaction();
+    return deckResult.insertedId.toString("base64");
+  }catch(e) {
+    throw e;
+  }
 }
 
 /**
  * Get a specific deck by ID
+ * @deprecated
  */
 export async function getDeck(deckId: DeckID): Promise<any | null> {
   return await apiCall(`/decks/${deckId}`);
@@ -73,6 +103,7 @@ export async function getDeck(deckId: DeckID): Promise<any | null> {
 
 /**
  * Get the user's default deck
+ * @deprecated
  */
 export async function getDefaultDeck(): Promise<any | null> {
   return await apiCall('/user/default-deck');
@@ -80,6 +111,7 @@ export async function getDefaultDeck(): Promise<any | null> {
 
 /**
  * Get flashcards for a specific deck
+ * @deprecated
  */
 export async function getDeckFlashcards(deckId: DeckID): Promise<Flashcard[]> {
   const cards = await apiCall(`/decks/${deckId}/flashcards`);
@@ -95,18 +127,27 @@ export async function addFlashcardToDeck(deckId: DeckID, flashcard: Flashcard) {
     return null;
   }
 
-  const flashcardData = {
-    term: flashcard.term,
-    reading: Array.isArray(flashcard.reading) ? flashcard.reading : [],
-    definition: flashcard.definition,
-    deck_id: deckId
-  };
+  // const flashcardData = {
+  //   term: flashcard.term,
+  //   reading: Array.isArray(flashcard.reading) ? flashcard.reading : [],
+  //   definition: flashcard.definition,
+  //   // deck_id: deckId
+  // };
   
-  return await apiCall(`/decks/${deckId}/flashcards`, 'POST', flashcardData);
+
+  await database.collection("decks").findOneAndUpdate({
+    _id: ObjectId.createFromHexString(deckId)
+  }, {
+    $push: {
+      cards: flashcard
+    }
+  });
+  // return await apiCall(`/decks/${deckId}/flashcards`, 'POST', flashcardData);
 }
 
 /**
  * Get all flashcards for the user's default deck
+ * @deprecated
  */
 export async function getMyFlashcards(): Promise<Flashcard[]> {
   const deck = await getDefaultDeck();
@@ -120,6 +161,7 @@ export async function getMyFlashcards(): Promise<Flashcard[]> {
 
 /**
  * Create a new flashcard in the user's default deck
+ * @deprecated
  */
 export async function createFlashcard(flashcard: Flashcard): Promise<Flashcard | null> {
   const defaultDeck = await getDefaultDeck();
@@ -128,6 +170,13 @@ export async function createFlashcard(flashcard: Flashcard): Promise<Flashcard |
     return null;
   }
   
+  await database.collection("users").findOneAndUpdate({
+    _id: deckData.owner
+  }, {
+    $push: {
+      decks: deckResult.insertedId
+    }
+  });
   return await addFlashcardToDeck(defaultDeck._id, flashcard);
 }
 
@@ -137,7 +186,12 @@ export async function createFlashcard(flashcard: Flashcard): Promise<Flashcard |
 
 
 const users = database.collection("users");
-
+/**
+ * Get User by ID.
+ * @param user 
+ * @deprecated
+ * @returns 
+ */
 export async function getUser(user: UserID) : Promise<User|null> {
 
   const result = await users.findOne({

@@ -1,0 +1,54 @@
+
+
+.container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+
+    padding: 96px;
+}
+
+.card-header rt {
+    font-size: 0.4em;
+    user-select: none;
+}
+.card-header {
+    font-size: 32px;
+    white-space: no-wrap;
+    padding: 8px;
+    color: white;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+
+    background-color: #ffffff1e;
+
+    margin: 24px;
+
+    border-radius: 8px;
+
+    position: relative;
+}
+
+.flashcard-add {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    font-size: 32px;
+    transition: background-color .3s;
+    padding: 8px;
+    background-color: #ffffff10;
+
+    border-radius: 100%;
+}
+
+.flashcard-add:hover {
+    background-color: #00000011;
+}

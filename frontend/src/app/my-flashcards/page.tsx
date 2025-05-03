@@ -1,42 +1,54 @@
-'use client';
+'use server';
 
-import { useEffect, useState } from 'react';
-import { getMyFlashcards, createFlashcard, getDefaultDeck, getUser } from '../../actions/deck-actions';
-import { Flashcard, User } from '@/types/deck';
-import LoadingIndicator from '@/components/ui/loading-indicator';
-import FlashcardList from '@/components/flashcard-list/flashcard-list';
-import { useSession } from 'next-auth/react';
+import { Session } from "next-auth";
+import { auth } from "../api/auth/[...nextauth]/route";
+import { database } from "@/actions/database";
+import { ObjectId } from "mongodb";
+import Link from "next/link";
 
-export default function MyFlashcardsPage() {
-  const { data: session, status } = useSession();
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+function NotLoggedIn() {
+  return <>
+    <h2>Log in to see your flashcards.</h2>
+  </>
+}
 
-  const [ user, setUser ] = useState<User|null>(null);
+async function LoggedIn({ session } : { session: Session }) {
 
-  // Load flashcards and default deck on page load
-  useEffect(() => {
-    if(!session?.user.id) {
-      // redirect("/signin");
-      return;
+  // const headers = await getAuthHeaders();
+  const user = await database.collection("users").findOne({
+    _id: ObjectId.createFromHexString(session.user.id ?? "")
+  });
+
+  const decks = await database.collection("decks").find({
+    _id: {
+      $in: user?.decks ?? []
     }
-    getUser(session?.user.id).then((user) => {
-      // console.log(user)
-    });
-  }, [status]);
+  }).limit(20).toArray();
+
+
+  return <div>
+    {
+      decks.map((deck, i) => <li key={i}>{
+        <Link href={`/deck/${deck._id.toString("base64")}`}>{deck.name}</Link>}</li>)
+    }
+    <Link href="/deck/create">Create Deck</Link>
+    {/* <CreateDeckButton/> */}
+  </div>
+}
+
+export default async function MyFlashcardsPage() {
+  // const { data: session, status } = useSession();
+  const session = await auth();
+
 
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">My Flashcards</h1>
       
-      <ul>
-        {user?.decks.map((deck) => <li>Deck</li>)}
-      </ul>
-
-      <button>Create Deck</button>
+      {
+        session ? <LoggedIn session={session}/> : <NotLoggedIn/>
+      }
 
     </div>
   );

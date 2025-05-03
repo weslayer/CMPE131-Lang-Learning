@@ -11,6 +11,9 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
+
+from bson.objectid import ObjectId
+
 import CDict
 from contextlib import asynccontextmanager
 from models import User, Deck, Flashcard
@@ -430,6 +433,14 @@ async def register_google_user(user_data: User):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error registering user: {str(e)}"
         )
+
+
+
+# @app.get("/user", response_model=User)
+# async def get_user(id: str):
+#     """Get user from database"""
+#     # user = await get_user_by_id(ObjectID(id))
+#     return user
 
 @app.get("/user/decks", response_model=List[Deck])
 async def get_current_user_decks(current_user: User = Depends(get_current_user)):

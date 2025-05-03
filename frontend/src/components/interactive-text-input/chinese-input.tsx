@@ -1,20 +1,19 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Dispatch, SetStateAction } from 'react'
 import { CDictEntry } from '@/types/cdict'
 import { Button } from '@/components/ui/button'
-import { createFlashcard } from '@/actions/deck-actions'
+import { addFlashcardToDeck, createFlashcard } from '@/actions/deck-actions'
 import { useSession } from 'next-auth/react'
-import { RubyDisplay } from '@/components/ruby-display/ruby-display'
+import { MultiRubyDisplay, RubyDisplay } from '@/components/ruby-display/ruby-display'
 
 interface ChineseInputProps {
-  onWordAdded?: (word: string) => void
+  setTokens: Dispatch<SetStateAction<string[]>>
 }
 
-export default function ChineseInput({ onWordAdded }: ChineseInputProps) {
-  const { data: session, status } = useSession()
-  const [text, setText] = useState('')
-  const [tokens, setTokens] = useState<string[]>([])
+export default function ChineseInput({ setTokens }: ChineseInputProps) {
+  const [text, setText] = useState('');
+  // const [tokens, setTokens] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -49,50 +48,6 @@ export default function ChineseInput({ onWordAdded }: ChineseInputProps) {
 
     return () => clearTimeout(timeoutId);
   }, [text]);
-
-  // Handle adding a word to flashcards
-  const handleAddToFlashcards = async (
-    token: string, 
-    entry: CDictEntry | null
-  ) => {
-    if (!entry) return;
-    
-    if (status !== 'authenticated') {
-      setError('You must be signed in to add flashcards');
-      setTimeout(() => setError(null), 3000);
-      return;
-    }
-
-    try {
-      // Format readings and definition
-      const readings = entry.reading || [];
-      const definition = entry.senses && entry.senses.length > 0
-        ? entry.senses.join('; ')
-        : 'No definition available';
-      
-      // Create and add the flashcard
-      const flashcard = {
-        term: token,
-        reading: readings,
-        definition: definition
-      };
-      
-      const result = await createFlashcard(flashcard);
-      
-      if (result) {
-        setSuccessMessage(`Added "${token}" to your flashcards`);
-        setTimeout(() => setSuccessMessage(null), 3000);
-        if (onWordAdded) onWordAdded(token);
-      } else {
-        setError('Failed to add flashcard. Please try again.');
-        setTimeout(() => setError(null), 3000);
-      }
-    } catch (err) {
-      console.error('Error adding flashcard:', err);
-      setError(`Error: ${(err as Error).message}`);
-      setTimeout(() => setError(null), 3000);
-    }
-  };
 
   return (
     <div className="w-full max-w-3xl mx-auto">
@@ -132,32 +87,18 @@ export default function ChineseInput({ onWordAdded }: ChineseInputProps) {
         </div>
       )}
 
-      {tokens.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-lg font-semibold mb-3 text-gray-100">Words Found:</h3>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            {tokens.map((token, i) => (
-              <TokenCard 
-                key={i} 
-                token={token} 
-                onAddToFlashcards={handleAddToFlashcards}
-              />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
 interface TokenCardProps {
   token: string;
-  onAddToFlashcards: (token: string, entry: CDictEntry | null) => Promise<void>;
+  deckId: string;
 }
 
-function TokenCard({ token, onAddToFlashcards }: TokenCardProps) {
+export function TokenCard({ token, deckId }: TokenCardProps) {
   const [entry, setEntry] = useState<CDictEntry | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
 
@@ -173,33 +114,30 @@ function TokenCard({ token, onAddToFlashcards }: TokenCardProps) {
       })
       .then((data: CDictEntry[]) => {
         setEntry(Array.isArray(data) && data.length > 0 ? data[0] : null);
-        setLoading(false);
       })
       .catch(err => {
         console.error('Error fetching translation:', err);
+      }).finally(() => {
         setLoading(false);
       });
   }, [token]);
 
   const handleAddClick = async () => {
-    setAdding(true);
-    try {
-      await onAddToFlashcards(token, entry);
-      setAdded(true);
-      setTimeout(() => setAdded(false), 2000);
-    } finally {
-      setAdding(false);
-    }
+    await addFlashcardToDeck(deckId, {
+      term: token.split("").join(";"),
+      reading: entry?.reading ?? "",
+      definition: entry?.senses.join(", ") ?? ""
+    });
   };
-
+  
+  if(loading) return <></>
   // Check if we have valid readings and definitions
-  const hasValidReadings = entry && 
-                           Array.isArray(entry.reading) && 
-                           entry.reading.length > 0;
+  const hasValidReadings = entry?.reading != null;
   const hasValidSenses = entry && 
-                         Array.isArray(entry.senses) && 
-                         entry.senses.length > 0;
-
+    Array.isArray(entry.senses) && 
+    entry.senses.length > 0;
+  if(!hasValidReadings) return <></>
+  
   return (
     <div className="border rounded-lg p-4 shadow-sm bg-white">
       {loading ? (
@@ -210,16 +148,7 @@ function TokenCard({ token, onAddToFlashcards }: TokenCardProps) {
         <>
           <div className="flex justify-between items-start mb-2">
             <div className="text-xl font-bold text-gray-900">
-              {hasValidReadings ? (
-                <RubyDisplay
-                  terms={token.split('').map((char, i) => ({
-                    text: char,
-                    reading: (entry?.reading && i < entry.reading.length) 
-                      ? entry.reading[i] 
-                      : ""
-                  }))}
-                />
-              ) : token}
+              <MultiRubyDisplay text={token.split("").join(";")} reading={entry.reading} />
             </div>
             <Button
               size="sm"

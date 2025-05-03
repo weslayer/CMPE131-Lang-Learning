@@ -1,11 +1,11 @@
 export interface Flashcard {
-  _id?: string;
+  // _id?: string;
   term: string;
-  reading: string[];
+  reading: string;
   definition: string;
-  created_at?: string;
-  updated_at?: string;
-  deck_id?: string;
+  // created_at?: string;
+  // updated_at?: string;
+  // deck_id?: string;
 }
 
 export type FlashcardID = string; 

@@ -279,7 +279,7 @@ async def delete_flashcard(flashcard_id: str):
         logger.error(f"Error deleting flashcard: {str(e)}")
         raise
 
-async def get_user_by_id(user_id: str):
+async def get_user_by_id(user_id: ObjectId):
     """Get a user by their ID"""
     try:
         logger.info(f"Looking for user with ID: {user_id}")

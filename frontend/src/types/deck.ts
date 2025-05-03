@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import { Flashcard } from './flashcard';
 
 export interface Deck {

@@ -6,6 +6,6 @@ export interface CDictEntry {
     trad: string,
     simp: string,
 
-    reading: string[],
+    reading: string,
     senses: string[]
 };
