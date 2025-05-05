@@ -84,15 +84,15 @@ export function Header() {
             ) : status === "authenticated" ? (
               <div className="flex items-center gap-4">
                 <Link
-                  href="/my-flashcards"
+                  href="/flashcards"
                   className={`text-md tracking-tight transition-colors ${isActive('/my-flashcards') ? 'text-primary font-medium' : 'hover:text-primary'}`}
                   tabIndex={0}
                   aria-label="Go to my flashcards"
                   aria-current={isActive('/my-flashcards') ? 'page' : undefined}
                 >
-                  My Flashcards
+                  Flashcards
                 </Link>
-                <Link
+                {/* <Link
                   href="/flashcards"
                   className={`text-md tracking-tight transition-colors ${isActive('/flashcards') ? 'text-primary font-medium' : 'hover:text-primary'}`}
                   tabIndex={0}
@@ -100,7 +100,7 @@ export function Header() {
                   aria-current={isActive('/flashcards') ? 'page' : undefined}
                 >
                   Practice
-                </Link>
+                </Link> */}
               </div>
             ) : status === "unauthenticated" ? (
               <span className="text-md text-gray-400">

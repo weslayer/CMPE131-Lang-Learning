@@ -1,17 +1,21 @@
 "use client"
 
+import { setDeckFlashcards } from "@/actions/deck-actions";
 import { TimelineControl } from "@/components/flashcard-control-bar/flashcard-control-bar";
 import FlashcardList from "@/components/flashcard-list/flashcard-list";
 import { Flashcard, FlashcardBack, FlashcardFront } from "@/components/flashcard-view/flashcard-view";
 import { MultiRubyDisplay, RubyDisplay } from "@/components/ruby-display/ruby-display";
+import { DeckID } from "@/types/deck";
 import { Flashcard as FlashcardT } from "@/types/flashcard";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function DeckView({ cards } : { cards: FlashcardT[] }) {
+export default function DeckView({ cards, deckID, deckIDB64 } : { cards: FlashcardT[], deckID: DeckID, deckIDB64: string }) {
 
   const [cardIndex, setCardIndex] = useState(0);
   const [side, setSide] = useState(false);
 
+  const router = useRouter();
 
 
 
@@ -36,32 +40,42 @@ export default function DeckView({ cards } : { cards: FlashcardT[] }) {
     return <>
         <Flashcard side={side} onClick={() => setSide(prev => !prev)}>
         <FlashcardFront>
-            <div className="text-gray-900 text-4xl font-bold">
-              <MultiRubyDisplay text={currentCard.term} reading={currentCard.reading}/>
+            <div className="text-gray-900 font-bold" style={{
+              fontSize: "48px"
+            }}>
+              {currentCard ? <MultiRubyDisplay text={currentCard.term} reading={currentCard.reading}/> : <></>}
             </div>
         </FlashcardFront>
         <FlashcardBack>
-            <div className="text-center">
+            {currentCard ? <div className="text-center">
             <h3 className="text-xl font-semibold mb-2 text-gray-800">Translation:</h3>
             <p className="text-gray-900 text-lg">
                 {currentCard.definition}
             </p>
-            </div>
+            </div> : <></>}
         </FlashcardBack>
         </Flashcard>
 
         <TimelineControl 
-        position={cardIndex + 1} 
-        total={cards.length}
-        onNext={handleNext}
-        onPrevious={handlePrevious}
+          position={cardIndex + 1} 
+          total={cards.length}
+          onNext={handleNext}
+          onPrevious={handlePrevious}
         />
 
         <div className="mt-8">
         <FlashcardList 
+          deckID={deckID}
+          deckIDB64={deckIDB64}
             flashcards={cards} 
             activeIndex={cardIndex}
             onSelectCard={handleSelectCard}
+            setFlashcard={async (i, card) => {
+              const copy = cards.map((a) => a);
+              copy[i] = card;
+              await setDeckFlashcards(deckID, copy);
+              router.refresh();
+            }}
         />
         </div>
     </>

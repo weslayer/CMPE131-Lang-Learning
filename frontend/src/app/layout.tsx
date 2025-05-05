@@ -5,6 +5,7 @@ import { Header } from "@/components/header/header";
 import { NextAuthProvider } from "@/components/providers/next-auth-provider";
 
 import styles from "./layout.module.css"
+import ReactModal from "react-modal";
 
 
 const geistSans = Geist({
@@ -30,6 +31,7 @@ export const metadata: Metadata = {
   authors: [{ name: "LangLearn Team" }],
   keywords: ["language learning", "text analysis", "education"],
 };
+
 
 export default function RootLayout({
   children,

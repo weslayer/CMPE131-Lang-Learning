@@ -1,14 +1,18 @@
 "use client"
 
-import { useState, useEffect, Dispatch, SetStateAction } from 'react'
+import styles from "./chinese-input.module.css";
+import { useState, useEffect } from 'react'
 import { CDictEntry } from '@/types/cdict'
-import { Button } from '@/components/ui/button'
-import { addFlashcardToDeck, createFlashcard } from '@/actions/deck-actions'
-import { useSession } from 'next-auth/react'
-import { MultiRubyDisplay, RubyDisplay } from '@/components/ruby-display/ruby-display'
+
+import { addFlashcardToDeck } from '@/actions/deck-actions'
+
+import { MultiRubyDisplay } from '@/components/ruby-display/ruby-display'
+import { Flashcard } from '@/types/flashcard'
+import { TimelineControl } from "../flashcard-control-bar/flashcard-control-bar";
+import { useRouter } from "next/navigation";
 
 interface ChineseInputProps {
-  setTokens: Dispatch<SetStateAction<string[]>>
+  setTokens: (a:string[])=>void
 }
 
 export default function ChineseInput({ setTokens }: ChineseInputProps) {
@@ -50,14 +54,7 @@ export default function ChineseInput({ setTokens }: ChineseInputProps) {
   }, [text]);
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
-      <div className="mb-4">
-        <label 
-          htmlFor="chinese-input" 
-          className="block text-sm font-medium mb-2 text-gray-100"
-        >
-          Enter Chinese Text:
-        </label>
+    <div >
         <textarea
           id="chinese-input"
           className="w-full p-3 border border-gray-700 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-100 bg-gray-800"
@@ -66,7 +63,6 @@ export default function ChineseInput({ setTokens }: ChineseInputProps) {
           onChange={(e) => setText(e.target.value)}
           placeholder="Type or paste Chinese text here..."
         />
-      </div>
 
       {loading && (
         <div className="text-center py-4">
@@ -93,15 +89,23 @@ export default function ChineseInput({ setTokens }: ChineseInputProps) {
 
 interface TokenCardProps {
   token: string;
-  deckId: string;
+  deckId?: string;
+  cards?: Flashcard[]
 }
 
-export function TokenCard({ token, deckId }: TokenCardProps) {
-  const [entry, setEntry] = useState<CDictEntry | null>(null);
+export function TokenCard({ token, deckId, cards }: TokenCardProps) {
+  const [entries, setEntries] = useState<CDictEntry[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [added, setAdded] = useState(false);
+  // const [added, setAdded] = useState(false);
+  const [ entryIndex, setEntryIndex ] = useState(0);
+  const entry = (entries ? entries[entryIndex] : null);
 
+  const router = useRouter();
+  
+  const added = (entry && cards  ? cards.some((card) => {
+    return (card.definition === entry.senses.join(", ") && card.reading === entry.reading && card.term === token.split("").join(";"))
+  }) : false);
   // Fetch translation for this token
   useEffect(() => {
     setLoading(true);
@@ -113,7 +117,13 @@ export function TokenCard({ token, deckId }: TokenCardProps) {
         return res.json();
       })
       .then((data: CDictEntry[]) => {
-        setEntry(Array.isArray(data) && data.length > 0 ? data[0] : null);
+        // setAdded(cards.some((card) => {
+        //   return (card.definition === data[0].senses.join(", ") &&
+        //   card.reading === data[0].reading &&
+        //   card.term === token.split("").join(";")
+        // )
+        // }));
+        setEntries(Array.isArray(data) && data.length > 0 ? data : null);
       })
       .catch(err => {
         console.error('Error fetching translation:', err);
@@ -123,11 +133,21 @@ export function TokenCard({ token, deckId }: TokenCardProps) {
   }, [token]);
 
   const handleAddClick = async () => {
-    await addFlashcardToDeck(deckId, {
-      term: token.split("").join(";"),
-      reading: entry?.reading ?? "",
-      definition: entry?.senses.join(", ") ?? ""
-    });
+    if(!deckId) return;
+    setAdding(true);
+    try {
+      await addFlashcardToDeck(deckId, {
+        term: token.split("").join(";"),
+        reading: entry?.reading ?? "",
+        definition: entry?.senses.join(", ") ?? ""
+      });
+
+      router.refresh();
+      // setAdded(true);
+    }catch {
+
+    }
+    setAdding(false);
   };
   
   if(loading) return <></>
@@ -139,7 +159,7 @@ export function TokenCard({ token, deckId }: TokenCardProps) {
   if(!hasValidReadings) return <></>
   
   return (
-    <div className="border rounded-lg p-4 shadow-sm bg-white">
+    <div className={styles["card"] + " border rounded-lg p-4 shadow-sm bg-white"}>
       {loading ? (
         <div className="h-32 flex items-center justify-center">
           <div className="animate-pulse h-4 w-24 bg-gray-200 rounded"></div>
@@ -147,22 +167,37 @@ export function TokenCard({ token, deckId }: TokenCardProps) {
       ) : (
         <>
           <div className="flex justify-between items-start mb-2">
-            <div className="text-xl font-bold text-gray-900">
+            <div className="font-bold text-gray-900">
               <MultiRubyDisplay text={token.split("").join(";")} reading={entry.reading} />
             </div>
-            <Button
-              size="sm"
-              variant={added ? "default" : "outline"}
+            {(deckId ?  <button
               onClick={handleAddClick}
-              disabled={adding || !entry}
-              className={added ? "bg-green-500 hover:bg-green-600" : "text-gray-900 border-gray-500"}
+              disabled={adding || !deckId}
+              className={`${styles["add-button"]} ${added ? styles["added"] : ""}`}
             >
               {adding ? "..." : added ? "Added ✓" : "Add to Flashcards"}
-            </Button>
+            </button> : <></>)}
           </div>
           
           {hasValidSenses ? (
             <div className="mt-2">
+                <h4 className="text-sm font-semibold text-gray-700 mb-1">{entries?.length} entries found</h4>
+                <div style={{
+                  fontSize: "12px",
+                  width: "max-content"
+                }}>
+                  <TimelineControl
+                    position={entryIndex+1}
+                    dark={true}
+                    total={entries?.length ?? 0}
+                    onNext={() => {
+                      setEntryIndex((i) => i + 1);
+                    }}
+                    onPrevious={() => {
+                      setEntryIndex((i) => i - 1);
+                    }}
+                  />
+              </div>
               <h4 className="text-sm font-semibold text-gray-700 mb-1">Translation:</h4>
               <ul className="list-disc pl-5 text-sm text-gray-900">
                 {entry.senses.map((sense, i) => (

@@ -1,0 +1,28 @@
+
+
+.add-button {
+    color: #262626;
+    transition: .3s background-color;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.add-button:disabled { 
+    color: #9f9f9f;
+
+}
+
+
+.add-button:hover:not(:disabled) {
+    background-color: #0000001d;
+}
+
+.added {
+    color: #35cc54;
+}
+
+.card {
+    transition: .3s all;
+    padding: 32px;
+}

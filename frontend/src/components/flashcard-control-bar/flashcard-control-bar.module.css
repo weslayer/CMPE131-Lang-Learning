@@ -2,21 +2,22 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 1.5rem;
-    margin: 1.5rem 0;
-    font-size: 1rem;
+    gap: 1.5em;
+    margin: 1.5em 0;
+    font-size: 1em;
 }
+
 
 .timeline-button {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2.5em;
+    height: 2.5em;
     border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.1);
     color: #fff;
-    font-size: 1.25rem;
+    font-size: 1.0em;
     border: 1px solid rgba(255, 255, 255, 0.2);
     cursor: pointer;
     transition: all 0.2s ease;
@@ -34,4 +35,17 @@
 
 .timeline-bold {
     color: rgba(255, 255, 255, 0.5);
+}
+
+.dark.timeline-control {
+    color: #4d4d4d;
+}
+.dark .timeline-bold {
+    color: #282828;
+}
+
+.dark .timeline-button {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #252525;
 }

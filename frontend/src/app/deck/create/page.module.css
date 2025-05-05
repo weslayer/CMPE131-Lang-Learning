@@ -1,0 +1,29 @@
+
+
+.form {
+    margin-left: 24px;
+}
+
+.form label{
+    font-weight: bold;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+.form input{
+    /* font-weight: bold; */
+    margin-bottom: 16px;
+}
+
+.form button {
+    margin-top: 8px;
+    border: 1px solid #cdcdcdff;
+    transition: .3s all;
+    padding: 16px 24px;
+    border-radius: 4px;
+}
+
+.form button:hover {
+    background-color: #16161670;
+    transform: translate(0, -1px);
+
+}

@@ -127,6 +127,9 @@ export async function addFlashcardToDeck(deckId: DeckID, flashcard: Flashcard) {
     return null;
   }
 
+  const session = await auth();
+
+
   // const flashcardData = {
   //   term: flashcard.term,
   //   reading: Array.isArray(flashcard.reading) ? flashcard.reading : [],
@@ -136,7 +139,8 @@ export async function addFlashcardToDeck(deckId: DeckID, flashcard: Flashcard) {
   
 
   await database.collection("decks").findOneAndUpdate({
-    _id: ObjectId.createFromHexString(deckId)
+    _id: ObjectId.createFromHexString(deckId),
+    owner: ObjectId.createFromHexString(session?.user.id ?? "")
   }, {
     $push: {
       cards: flashcard
@@ -144,6 +148,31 @@ export async function addFlashcardToDeck(deckId: DeckID, flashcard: Flashcard) {
   });
   // return await apiCall(`/decks/${deckId}/flashcards`, 'POST', flashcardData);
 }
+
+/**
+ * Add a flashcard to a specific deck
+ */
+export async function setDeckFlashcards(deckId: DeckID, flashcards: Flashcard[]) {
+  // if(flashcards)
+  // const flashcardData = {
+  //   term: flashcard.term,
+  //   reading: Array.isArray(flashcard.reading) ? flashcard.reading : [],
+  //   definition: flashcard.definition,
+  //   // deck_id: deckId
+  // };
+  
+
+  await database.collection("decks").findOneAndUpdate({
+    _id: ObjectId.createFromHexString(deckId),
+    owner: ObjectId.createFromHexString(session?.user.id ?? "")
+  }, {
+    $set: {
+      cards: flashcards
+    }
+  });
+  // return await apiCall(`/decks/${deckId}/flashcards`, 'POST', flashcardData);
+}
+
 
 /**
  * Get all flashcards for the user's default deck

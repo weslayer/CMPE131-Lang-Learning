@@ -19,6 +19,9 @@ export function Flashcard({ side, onClick, children }:  { side: boolean, onClick
     return (
         <div 
             className="relative w-full max-w-xl mx-auto cursor-pointer"
+            style={{
+                width: "500px"
+            }}
             onClick={onClick}
         >
             <SideContext.Provider value={{side}}>

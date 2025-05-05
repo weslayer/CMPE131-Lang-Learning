@@ -6,16 +6,19 @@ interface TimelineControlProps {
   total: number;
   onNext?: () => void;
   onPrevious?: () => void;
+  dark?: boolean;
 }
 
 export function TimelineControl({ 
   position, 
   total, 
   onNext, 
-  onPrevious 
+  onPrevious,
+  dark
+
 }: TimelineControlProps) {
   return (
-    <div className={styles["timeline-control"]}>
+    <div className={`${styles["timeline-control"]} ${(dark ? styles["dark"] : "")}`}>
       <button 
         className={styles["timeline-button"]}
         disabled={position <= 1}

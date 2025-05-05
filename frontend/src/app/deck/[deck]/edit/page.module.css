@@ -6,7 +6,7 @@
     overflow: auto;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    /* align-items: center; */
     gap: 32px;
 
     padding: 96px;
@@ -51,4 +51,30 @@
 
 .flashcard-add:hover {
     background-color: #00000011;
+}
+
+.current-card-grid {
+    display: grid;
+    grid-auto-columns: max-content;
+    grid-auto-flow: column;
+    grid-template-rows: min-content;
+    gap: 8px;
+
+    font-size: 48px;
+}
+
+.link {
+    display: inline-flex;
+    width: max-content;
+    padding: 8px;
+    align-items: center;
+    gap: 8px;
+    transition: .3s background-color, .3s transform;
+    background-color: #00000000;
+
+}
+
+.link:hover {
+    background-color: #00000025;
+    transform: translate(0, -1px);
 }

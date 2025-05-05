@@ -1,3 +1,4 @@
+// "use server"
 import { DATABASE_URI } from "@/config";
 import { MongoClient } from "mongodb";
 

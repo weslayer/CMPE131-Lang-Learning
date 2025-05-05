@@ -52,3 +52,11 @@
 .flashcard-add:hover {
     background-color: #00000011;
 }
+
+.grid {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 50% 50%;
+    font-size: 48px;
+    margin: 32px 0;
+}
