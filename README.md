@@ -1,5 +1,12 @@
-# nihao huzz
+# Lang Learning
+Language learning web application for CMPE131 (Software Engineering)
 
-## `docker compose up --build -d` to run
+Backend:
+* framework: FastAPI (Python)
 
-## `docker compose down` to stop
+Frontend:
+* framework: Next.js (Typescript)
+
+## running the application
+* `docker compose up --build -d` to run
+* `docker compose down` to stop
